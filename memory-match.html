@@ -6,43 +6,87 @@
     <title>Memory Match Game</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
+            color: #333;
             text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         h1 {
-            margin-bottom: 10px;
+            font-size: 2.5rem;
+            color: #4a4e69;
+            margin-bottom: 20px;
+        }
+        .moves {
+            font-size: 1.5rem;
+            margin: 10px 0;
+            color: #4a4e69;
         }
         .game-board {
             display: grid;
-            grid-template-columns: repeat(4, 100px);
-            grid-gap: 10px;
+            grid-template-columns: repeat(4, 120px);
+            gap: 15px;
             margin: 20px auto;
-            width: 450px;
         }
         .card {
-            width: 100px;
-            height: 100px;
-            background-color: #f0f0f0;
+            width: 120px;
+            height: 120px;
+            background-color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2em;
+            font-size: 2.5rem;
             font-weight: bold;
+            color: #4a4e69;
+            border: 2px solid #4a4e69;
+            border-radius: 10px;
             cursor: pointer;
-            border: 2px solid #333;
+            transition: transform 0.2s ease, background 0.2s ease;
             user-select: none;
         }
-        .card.flipped {
-            background-color: white;
+        .card:hover {
+            background-color: #f0f4f8;
+            transform: scale(1.05);
         }
-        .moves {
-            font-size: 1.2em;
-            margin: 10px;
+        .card.flipped {
+            background-color: #ffffff;
+            transform: rotateY(180deg);
         }
         .reset-btn {
+            margin-top: 20px;
             padding: 10px 20px;
-            font-size: 1em;
+            font-size: 1rem;
+            background: #4a4e69;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .reset-btn:hover {
+            transform: scale(1.05);
+        }
+        .win-message {
+            font-size: 1.8rem;
+            color: #2ecc71;
+            margin-top: 20px;
+            display: none;
+        }
+        @media (max-width: 600px) {
+            .game-board {
+                grid-template-columns: repeat(4, 90px);
+            }
+            .card {
+                width: 90px;
+                height: 90px;
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
@@ -50,7 +94,8 @@
     <h1>Memory Match Game</h1>
     <div class="moves">Moves: <span id="moveCount">0</span></div>
     <div class="game-board" id="gameBoard"></div>
-    <button class="reset-btn" onclick="resetGame()">Reset Game</button>
+    <p class="win-message" id="winMessage">🎉 You won in <span id="finalMoveCount"></span> moves! 🎉</p>
+    <button class="reset-btn" id="reset-btn">Play Again</button>
 
     <script>
         const emojis = ["🍎", "🍌", "🍒", "🍇", "🥝", "🍍", "🍉", "🥕"];
@@ -79,10 +124,11 @@
                 gameBoard.appendChild(card);
             });
             document.getElementById("moveCount").innerText = moves;
+            document.getElementById("winMessage").style.display = "none";
         }
 
         function flipCard(event) {
-            let clickedCard = event.target;
+            const clickedCard = event.target;
             if (flippedCards.length < 2 && !clickedCard.classList.contains("flipped")) {
                 clickedCard.classList.add("flipped");
                 clickedCard.innerText = clickedCard.dataset.emoji;
@@ -98,11 +144,16 @@
 
         function checkForMatch() {
             const [card1, card2] = flippedCards;
+
             if (card1.dataset.emoji === card2.dataset.emoji) {
                 matchedCards.push(card1, card2);
                 flippedCards = [];
+
                 if (matchedCards.length === cards.length) {
-                    setTimeout(() => alert("You won in " + moves + " moves!"), 300);
+                    setTimeout(() => {
+                        document.getElementById("winMessage").style.display = "block";
+                        document.getElementById("finalMoveCount").innerText = moves;
+                    }, 300);
                 }
             } else {
                 setTimeout(() => {
@@ -122,6 +173,7 @@
             createBoard();
         }
 
+        document.getElementById("reset-btn").addEventListener("click", resetGame);
         createBoard();
     </script>
 </body>
