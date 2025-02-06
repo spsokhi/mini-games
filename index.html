@@ -27,6 +27,8 @@
             --game-border-color: #4a4e69;
             --game-hover-bg-color: #4a4e69;
             --game-hover-text-color: #ffffff;
+            --button-text-color: #ffffff; /* White text for buttons in light mode */
+            --footer-text-color: #ffffff; /* White text for footer in light mode */
         }
 
         body {
@@ -107,7 +109,7 @@
 
         footer {
             background: var(--game-border-color);
-            color: var(--text-color);
+            color: var(--footer-text-color); /* Use footer text color variable */
             padding: 15px 0;
             font-size: 1rem;
             text-align: center;
@@ -125,7 +127,7 @@
             top: 20px;
             right: 20px;
             background: var(--game-border-color);
-            color: var(--text-color);
+            color: var(--button-text-color); /* Use button text color variable */
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
@@ -193,6 +195,43 @@
                 opacity: 0.7;
             }
         }
+
+        /* Random Game Button */
+        .random-game-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            background: var(--game-border-color);
+            color: var(--button-text-color); /* Use button text color variable */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .random-game-button:hover {
+            background: var(--game-hover-bg-color);
+            color: var(--game-hover-text-color);
+        }
+
+        /* Search Bar */
+        .search-bar {
+            margin: 20px auto;
+            width: 80%;
+            max-width: 400px;
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid var(--game-border-color);
+            border-radius: 5px;
+            background: var(--game-bg-color);
+            color: var(--text-color);
+            transition: border-color 0.3s ease;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: var(--game-hover-bg-color);
+        }
     </style>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -210,6 +249,10 @@
     <div>
         <h1>Mini-Game Hub</h1>
         <p>Select a game to play:</p>
+
+        <!-- Search Bar -->
+        <input type="text" id="search-bar" class="search-bar" placeholder="Search for a game...">
+
         <div class="game-list">
             <!-- Existing Games -->
             <div class="game" data-game="hangman">
@@ -256,6 +299,9 @@
                 <i class="fas fa-hammer"></i>Whack-a-Mole
             </div>
         </div>
+
+        <!-- Random Game Button -->
+        <button id="random-game-button" class="random-game-button">Play Random Game</button>
     </div>
     <footer>
         Made with <span>&hearts;</span> in India by Sukhi
@@ -318,6 +364,45 @@
                 themeToggle.textContent = 'Switch to Light Mode';
                 localStorage.setItem('theme', 'dark'); // Save preference
             }
+        });
+
+        // Random Game Button Logic
+        const randomGameButton = document.getElementById('random-game-button');
+        const games = document.querySelectorAll('.game');
+
+        randomGameButton.addEventListener('click', () => {
+            const randomIndex = Math.floor(Math.random() * games.length); // Generate random index
+            const randomGame = games[randomIndex];
+            const gameName = randomGame.dataset.game;
+
+            // Show the loading screen
+            showLoadingScreen();
+
+            // Simulate a delay for loading the game (you can replace this with actual game loading logic)
+            setTimeout(() => {
+                // Hide the loading screen after the delay
+                hideLoadingScreen();
+
+                // Redirect to the randomly selected game page
+                window.location.href = `${gameName}.html`;
+            }, 1500); // Simulated 1.5-second loading time
+        });
+
+        // Search Bar Logic
+        const searchBar = document.getElementById('search-bar');
+        const gameList = document.querySelectorAll('.game');
+
+        searchBar.addEventListener('input', () => {
+            const query = searchBar.value.toLowerCase(); // Get the search query in lowercase
+
+            gameList.forEach(game => {
+                const gameName = game.textContent.toLowerCase(); // Get the game name in lowercase
+                if (gameName.includes(query)) {
+                    game.style.display = 'flex'; // Show the game if it matches the query
+                } else {
+                    game.style.display = 'none'; // Hide the game if it doesn't match
+                }
+            });
         });
     </script>
 </body>
