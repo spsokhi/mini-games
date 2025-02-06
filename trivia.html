@@ -6,38 +6,94 @@
     <title>Trivia Quiz</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
+            color: #333;
             text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: #4a4e69;
+            margin-bottom: 20px;
         }
         .quiz-container {
             max-width: 500px;
             margin: auto;
             padding: 20px;
-            border: 2px solid #333;
+            border: 2px solid #4a4e69;
             border-radius: 10px;
+            background: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .question {
-            font-size: 1.2em;
-            margin-bottom: 10px;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #4a4e69;
         }
         .options button {
             display: block;
             width: 100%;
             margin: 5px 0;
             padding: 10px;
-            font-size: 1em;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            background: #f0f4f8;
+            color: #4a4e69;
             cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .options button:hover {
+            background: #4a4e69;
+            color: #fff;
+            transform: scale(1.05);
+        }
+        .options button.correct {
+            background: #2ecc71;
+            color: #fff;
+        }
+        .options button.wrong {
+            background: #e74c3c;
+            color: #fff;
         }
         .next-btn {
-            margin-top: 10px;
+            margin-top: 20px;
             padding: 10px;
-            font-size: 1em;
+            font-size: 1rem;
+            background: #4a4e69;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
+            transition: transform 0.2s ease;
             display: none;
         }
+        .next-btn:hover {
+            transform: scale(1.05);
+        }
         .score {
-            font-size: 1.2em;
-            margin-top: 10px;
+            font-size: 1.5rem;
+            margin-top: 20px;
+            color: #4a4e69;
+        }
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .question {
+                font-size: 1.2rem;
+            }
+            .options button {
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
@@ -46,8 +102,9 @@
     <div class="quiz-container">
         <div class="question" id="question"></div>
         <div class="options" id="options"></div>
-        <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Next Question</button>
+        <button class="next-btn" id="nextBtn">Next Question</button>
         <div class="score" id="score"></div>
+        <div class="feedback" id="feedback" style="display: none;"></div>
     </div>
 
     <script>
@@ -57,51 +114,68 @@
             { question: "What is the largest planet in our solar system?", options: ["Mars", "Earth", "Jupiter", "Venus"], answer: "Jupiter" },
             { question: "Which element has the chemical symbol 'O'?", options: ["Gold", "Oxygen", "Osmium", "Iron"], answer: "Oxygen" }
         ];
-        
+
         let currentQuestionIndex = 0;
         let score = 0;
 
         function loadQuestion() {
             document.getElementById("score").innerText = `Score: ${score}`;
-            const questionData = questions[currentQuestionIndex];
-            document.getElementById("question").innerText = questionData.question;
-            
-            const optionsContainer = document.getElementById("options");
-            optionsContainer.innerHTML = "";
-            
-            questionData.options.forEach(option => {
-                const button = document.createElement("button");
-                button.innerText = option;
-                button.onclick = () => checkAnswer(option);
-                optionsContainer.appendChild(button);
-            });
+            document.getElementById("feedback").style.display = "none";
 
-            document.getElementById("nextBtn").style.display = "none";
+            if (currentQuestionIndex < questions.length) {
+                const questionData = questions[currentQuestionIndex];
+                document.getElementById("question").innerText = questionData.question;
+
+                const optionsContainer = document.getElementById("options");
+                optionsContainer.innerHTML = "";
+
+                questionData.options.forEach(option => {
+                    const button = document.createElement("button");
+                    button.innerText = option;
+                    button.onclick = () => checkAnswer(button, option);
+                    optionsContainer.appendChild(button);
+                });
+
+                document.getElementById("nextBtn").style.display = "none";
+            } else {
+                endQuiz();
+            }
         }
 
-        function checkAnswer(selected) {
+        function checkAnswer(button, selected) {
             const correct = questions[currentQuestionIndex].answer;
+
+            // Disable all buttons after answering
+            const buttons = document.querySelectorAll(".options button");
+            buttons.forEach(btn => btn.disabled = true);
+
+            // Highlight correct and wrong answers
             if (selected === correct) {
+                button.classList.add("correct");
                 score++;
-                alert("Correct!");
+                document.getElementById("feedback").innerText = "🎉 Correct!";
             } else {
-                alert(`Wrong! The correct answer was: ${correct}`);
+                button.classList.add("wrong");
+                document.getElementById("feedback").innerText = `❌ Wrong! The correct answer was: ${correct}`;
             }
+
+            document.getElementById("feedback").style.display = "block";
             document.getElementById("nextBtn").style.display = "block";
         }
 
         function nextQuestion() {
             currentQuestionIndex++;
-            if (currentQuestionIndex < questions.length) {
-                loadQuestion();
-            } else {
-                document.getElementById("question").innerText = "Quiz Over!";
-                document.getElementById("options").innerHTML = "";
-                document.getElementById("nextBtn").style.display = "none";
-                document.getElementById("score").innerText = `Final Score: ${score} / ${questions.length}`;
-            }
+            loadQuestion();
         }
 
+        function endQuiz() {
+            document.getElementById("question").innerText = "Quiz Over!";
+            document.getElementById("options").innerHTML = "";
+            document.getElementById("nextBtn").style.display = "none";
+            document.getElementById("score").innerText = `Final Score: ${score} / ${questions.length}`;
+        }
+
+        document.getElementById("nextBtn").addEventListener("click", nextQuestion);
         loadQuestion();
     </script>
 </body>
