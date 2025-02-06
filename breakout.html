@@ -47,11 +47,25 @@
         .reset-btn:hover {
             transform: scale(1.05);
         }
+        .score-board {
+            font-size: 1.2rem;
+            color: #4a4e69;
+            margin-top: 10px;
+        }
+        @media (max-width: 600px) {
+            canvas {
+                width: 90%;
+                height: auto;
+            }
+        }
     </style>
 </head>
 <body>
     <h1>Breakout Game</h1>
     <canvas id="gameCanvas" width="480" height="320"></canvas>
+    <div class="score-board">
+        Score: <span id="score">0</span> | Lives: <span id="lives">3</span>
+    </div>
     <p class="game-over" id="game-over-message" style="display: none;">Game Over!</p>
     <button class="reset-btn" id="reset-btn" style="display: none;">Play Again</button>
 
@@ -77,7 +91,7 @@
         const brickHeight = 20;
         const brickPadding = 10;
         const brickOffsetTop = 30;
-        const brickOffsetLeft = 35;
+        const brickOffsetLeft = (canvas.width - (brickColumnCount * brickWidth + (brickColumnCount - 1) * brickPadding)) / 2;
 
         let score = 0;
         let lives = 3;
@@ -134,9 +148,11 @@
                             ballDY = -ballDY;
                             brick.status = 0;
                             score++;
+                            document.getElementById("score").innerText = score;
+
                             if (score === brickRowCount * brickColumnCount) {
                                 alert("🎉 You Win! 🎉");
-                                document.location.reload();
+                                resetGame();
                             }
                         }
                     }
@@ -169,9 +185,10 @@
                         const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
                         bricks[c][r].x = brickX;
                         bricks[c][r].y = brickY;
+
                         ctx.beginPath();
                         ctx.rect(brickX, brickY, brickWidth, brickHeight);
-                        ctx.fillStyle = "#2ecc71";
+                        ctx.fillStyle = `hsl(${(c * 30 + r * 10) % 360}, 70%, 60%)`; // Rainbow colors for bricks
                         ctx.fill();
                         ctx.closePath();
                     }
@@ -179,16 +196,9 @@
             }
         }
 
-        function drawScore() {
-            ctx.font = "16px Arial";
-            ctx.fillStyle = "#4a4e69";
-            ctx.fillText(`Score: ${score}`, 8, 20);
-        }
-
-        function drawLives() {
-            ctx.font = "16px Arial";
-            ctx.fillStyle = "#4a4e69";
-            ctx.fillText(`Lives: ${lives}`, canvas.width - 65, 20);
+        function drawScoreAndLives() {
+            document.getElementById("score").innerText = score;
+            document.getElementById("lives").innerText = lives;
         }
 
         function draw() {
@@ -196,8 +206,7 @@
             drawBricks();
             drawBall();
             drawPaddle();
-            drawScore();
-            drawLives();
+            drawScoreAndLives();
             collisionDetection();
 
             // Ball movement
@@ -244,6 +253,7 @@
         }
 
         document.getElementById("reset-btn").addEventListener("click", resetGame);
+
         draw();
     </script>
 </body>
