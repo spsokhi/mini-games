@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frogger Clone</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #000000, #2c3e50);
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        canvas {
+            border: 2px solid #fff;
+            background: #000;
+            display: block;
+            margin: 20px auto;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .game-info {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        .game-over {
+            font-size: 1.8rem;
+            color: #e74c3c;
+            margin-top: 20px;
+        }
+        .reset-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .reset-btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <h1>Frogger Clone</h1>
+    <div class="game-info">
+        Score: <span id="score">0</span> | Level: <span id="level">1</span>
+    </div>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <p class="game-over" id="game-over-message" style="display: none;">Game Over!</p>
+    <button class="reset-btn" id="reset-btn" style="display: none;">Play Again</button>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Game variables
+        const frog = { x: canvas.width / 2 - 10, y: canvas.height - 30, width: 20, height: 20 };
+        const cars = [];
+        let gameOver = false;
+        let score = 0;
+        let level = 1;
+        let carSpeedMultiplier = 1;
+
+        // Car class
+        class Car {
+            constructor(x, y, speed) {
+                this.x = x;
+                this.y = y;
+                this.width = 50;
+                this.height = 20;
+                this.speed = speed * carSpeedMultiplier;
+            }
+
+            draw() {
+                ctx.fillStyle = "#e74c3c";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            update() {
+                this.x += this.speed;
+                if (this.x > canvas.width) this.x = -this.width;
+                if (this.x < -this.width) this.x = canvas.width;
+            }
+        }
+
+        // Generate cars
+        function generateCars() {
+            cars.length = 0; // Clear existing cars
+            for (let i = 0; i < 5 + level; i++) {
+                cars.push(new Car(Math.random() * canvas.width, 100 + i * 40, Math.random() < 0.5 ? -2 : 2));
+            }
+        }
+
+        // Draw frog
+        function drawFrog() {
+            ctx.fillStyle = "#2ecc71";
+            ctx.fillRect(frog.x, frog.y, frog.width, frog.height);
+        }
+
+        // Move frog
+        document.addEventListener("keydown", (e) => {
+            if (gameOver) return;
+            if (e.key === "ArrowUp" && frog.y > 0) frog.y -= 20;
+            if (e.key === "ArrowDown" && frog.y < canvas.height - frog.height) frog.y += 20;
+            if (e.key === "ArrowLeft" && frog.x > 0) frog.x -= 20;
+            if (e.key === "ArrowRight" && frog.x < canvas.width - frog.width) frog.x += 20;
+
+            // Check if frog reaches the top
+            if (frog.y <= 0) {
+                score++;
+                level++;
+                carSpeedMultiplier += 0.2; // Increase car speed
+                document.getElementById("score").textContent = score;
+                document.getElementById("level").textContent = level;
+                resetFrogPosition();
+                generateCars();
+            }
+        });
+
+        // Reset frog position
+        function resetFrogPosition() {
+            frog.x = canvas.width / 2 - 10;
+            frog.y = canvas.height - 30;
+        }
+
+        // Check collisions
+        function checkCollisions() {
+            cars.forEach(car => {
+                if (
+                    frog.x < car.x + car.width &&
+                    frog.x + frog.width > car.x &&
+                    frog.y < car.y + car.height &&
+                    frog.y + frog.height > car.y
+                ) {
+                    gameOver = true;
+                    document.getElementById("game-over-message").style.display = "block";
+                    document.getElementById("reset-btn").style.display = "block";
+                }
+            });
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (gameOver) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawFrog();
+            cars.forEach(car => {
+                car.update();
+                car.draw();
+            });
+            checkCollisions();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Reset game
+        function resetGame() {
+            score = 0;
+            level = 1;
+            carSpeedMultiplier = 1;
+            document.getElementById("score").textContent = score;
+            document.getElementById("level").textContent = level;
+            resetFrogPosition();
+            cars.length = 0;
+            gameOver = false;
+            document.getElementById("game-over-message").style.display = "none";
+            document.getElementById("reset-btn").style.display = "none";
+            generateCars();
+            gameLoop();
+        }
+
+        document.getElementById("reset-btn").addEventListener("click", resetGame);
+
+        // Initialize game
+        generateCars();
+        gameLoop();
+    </script>
+</body>
+</html>

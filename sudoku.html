@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(9, 40px);
+            grid-gap: 2px;
+            width: 360px;
+            height: 360px;
+            border: 2px solid #4a4e69;
+        }
+        .cell {
+            background: #fff;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .cell input {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .cell.fixed {
+            background-color: #f0f4f8;
+            pointer-events: none;
+        }
+        .cell.error {
+            background-color: #ffcccc;
+        }
+        .reset-btn, .check-btn, .new-puzzle-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background: #4a4e69;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .reset-btn:hover, .check-btn:hover, .new-puzzle-btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <h1>Sudoku</h1>
+    <div class="grid" id="grid"></div>
+    <button class="reset-btn" id="reset-btn">Reset Puzzle</button>
+    <button class="check-btn" id="check-btn">Check Solution</button>
+    <button class="new-puzzle-btn" id="new-puzzle-btn">New Puzzle</button>
+    <script>
+        const gridElement = document.getElementById("grid");
+        const gridSize = 9;
+
+        // Generate a random Sudoku puzzle
+        function generateSudoku() {
+            const grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(0));
+
+            // Helper function to check if a number can be placed in a cell
+            function isValid(grid, row, col, num) {
+                for (let i = 0; i < gridSize; i++) {
+                    if (grid[row][i] === num || grid[i][col] === num) return false;
+                }
+                const startRow = Math.floor(row / 3) * 3;
+                const startCol = Math.floor(col / 3) * 3;
+                for (let r = startRow; r < startRow + 3; r++) {
+                    for (let c = startCol; c < startCol + 3; c++) {
+                        if (grid[r][c] === num) return false;
+                    }
+                }
+                return true;
+            }
+
+            // Recursive backtracking to fill the grid
+            function solve(grid) {
+                for (let row = 0; row < gridSize; row++) {
+                    for (let col = 0; col < gridSize; col++) {
+                        if (grid[row][col] === 0) {
+                            for (let num = 1; num <= gridSize; num++) {
+                                if (isValid(grid, row, col, num)) {
+                                    grid[row][col] = num;
+                                    if (solve(grid)) return true;
+                                    grid[row][col] = 0;
+                                }
+                            }
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            // Fill the grid with a complete solution
+            solve(grid);
+
+            // Remove numbers to create a puzzle
+            const cellsToRemove = 40; // Adjust difficulty by changing this value
+            for (let i = 0; i < cellsToRemove; i++) {
+                let row, col;
+                do {
+                    row = Math.floor(Math.random() * gridSize);
+                    col = Math.floor(Math.random() * gridSize);
+                } while (grid[row][col] === 0);
+                grid[row][col] = 0;
+            }
+
+            return grid;
+        }
+
+        // Render the Sudoku grid
+        function renderGrid(sudokuPuzzle) {
+            gridElement.innerHTML = "";
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    const cell = document.createElement("div");
+                    cell.classList.add("cell");
+
+                    const value = sudokuPuzzle[row][col];
+                    if (value !== 0) {
+                        cell.textContent = value;
+                        cell.classList.add("fixed");
+                    } else {
+                        const input = document.createElement("input");
+                        input.type = "text";
+                        input.maxLength = 1;
+                        input.pattern = "[1-9]";
+                        cell.appendChild(input);
+                    }
+
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+
+        // Reset puzzle
+        function resetPuzzle() {
+            const inputs = document.querySelectorAll(".cell input");
+            inputs.forEach(input => {
+                input.value = "";
+                input.parentElement.classList.remove("error");
+            });
+        }
+
+        // Check solution
+        function checkSolution(sudokuPuzzle) {
+            const inputs = document.querySelectorAll(".cell input");
+            let isValid = true;
+
+            inputs.forEach((input, index) => {
+                const row = Math.floor(index / gridSize);
+                const col = index % gridSize;
+                const value = input.value;
+
+                if (value !== "") {
+                    if (!isValidNumber(value, row, col, sudokuPuzzle)) {
+                        input.parentElement.classList.add("error");
+                        isValid = false;
+                    } else {
+                        input.parentElement.classList.remove("error");
+                    }
+                }
+            });
+
+            if (isValid) {
+                alert("Congratulations! Your solution is correct!");
+            } else {
+                alert("There are errors in your solution. Please try again.");
+            }
+        }
+
+        // Validate number placement
+        function isValidNumber(value, row, col, sudokuPuzzle) {
+            const num = parseInt(value);
+
+            // Check row
+            for (let c = 0; c < gridSize; c++) {
+                if (c !== col && sudokuPuzzle[row][c] === num) return false;
+            }
+
+            // Check column
+            for (let r = 0; r < gridSize; r++) {
+                if (r !== row && sudokuPuzzle[r][col] === num) return false;
+            }
+
+            // Check 3x3 subgrid
+            const startRow = Math.floor(row / 3) * 3;
+            const startCol = Math.floor(col / 3) * 3;
+            for (let r = startRow; r < startRow + 3; r++) {
+                for (let c = startCol; c < startCol + 3; c++) {
+                    if (r !== row && c !== col && sudokuPuzzle[r][c] === num) return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Event listeners
+        let currentPuzzle = generateSudoku();
+        renderGrid(currentPuzzle);
+
+        document.getElementById("reset-btn").addEventListener("click", resetPuzzle);
+
+        document.getElementById("check-btn").addEventListener("click", () => {
+            checkSolution(currentPuzzle);
+        });
+
+        document.getElementById("new-puzzle-btn").addEventListener("click", () => {
+            currentPuzzle = generateSudoku();
+            renderGrid(currentPuzzle);
+            resetPuzzle();
+        });
+    </script>
+</body>
+</html>
