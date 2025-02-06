@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini-Game Hub</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .game-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
+        .game { border: 2px solid #333; padding: 15px; width: 200px; text-align: center; border-radius: 10px; cursor: pointer; background: #f4f4f4; }
+        .game:hover { background: #ddd; }
+    </style>
+</head>
+<body>
+    <h1>Mini-Game Hub</h1>
+    <p>Select a game to play:</p>
+    <div class="game-list">
+        <div class="game" onclick="location.href='hangman.html'">Hangman</div>
+        <div class="game" onclick="location.href='tic-tac-toe.html'">Tic-Tac-Toe</div>
+        <div class="game" onclick="location.href='memory-match.html'">Memory Match</div>
+        <div class="game" onclick="location.href='snake.html'">Snake</div>
+        <div class="game" onclick="location.href='trivia.html'">Trivia Quiz</div>
+        <div class="game" onclick="location.href='breakout.html'">Breakout</div>
+        <div class="game" onclick="location.href='2048.html'">2048 Puzzle</div>
+        <div class="game" onclick="location.href='flappy-bird.html'">Flappy Bird</div>
+        <div class="game" onclick="location.href='minesweeper.html'">Minesweeper</div>
+        <div class="game" onclick="location.href='rock-paper-scissors.html'">Rock-Paper-Scissors</div>
+    </div>
+</body>
+</html>
