@@ -52,6 +52,8 @@
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
             cursor: pointer; /* Make the title clickable */
             transition: transform 0.3s ease;
+            display: inline-block; /* Fix: Limit the width of the h1 */
+            padding: 10px; /* Add padding for better clickability */
         }
 
         h1:hover {
@@ -140,6 +142,7 @@
             cursor: pointer;
             font-size: 1rem;
             transition: background-color 0.3s ease, color 0.3s ease;
+            z-index: 10; /* Ensure it's above other elements */
         }
 
         .theme-toggle:hover {
