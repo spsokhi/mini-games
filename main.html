@@ -5,26 +5,145 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mini-Game Hub</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        .game-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
-        .game { border: 2px solid #333; padding: 15px; width: 200px; text-align: center; border-radius: 10px; cursor: pointer; background: #f4f4f4; }
-        .game:hover { background: #ddd; }
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
+            color: #333;
+            text-align: center;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        h1 {
+            font-size: 2.8rem;
+            margin-top: 20px;
+            color: #4a4e69;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        p {
+            font-size: 1.2rem;
+            color: #6c757d;
+        }
+        .game-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .game {
+            border: 2px solid #4a4e69;
+            padding: 20px;
+            text-align: center;
+            border-radius: 15px;
+            cursor: pointer;
+            background: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #4a4e69;
+            position: relative;
+            overflow: hidden;
+        }
+        .game:hover {
+            background: #4a4e69;
+            color: #fff;
+            transform: scale(1.05);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+        }
+        .game::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.5s ease;
+        }
+        .game:hover::before {
+            transform: scaleX(1);
+        }
+        .game i {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: block;
+            color: #4a4e69;
+            transition: color 0.3s ease;
+        }
+        .game:hover i {
+            color: #fff;
+        }
+        footer {
+            background: #4a4e69;
+            color: #fff;
+            padding: 15px 0;
+            font-size: 1rem;
+            text-align: center;
+            margin-top: auto;
+        }
+        footer span {
+            color: red;
+            font-size: 1.2rem;
+        }
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .game {
+                width: 100%;
+                padding: 15px;
+                font-size: 1rem;
+            }
+        }
     </style>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <h1>Mini-Game Hub</h1>
-    <p>Select a game to play:</p>
-    <div class="game-list">
-        <div class="game" onclick="location.href='hangman.html'">Hangman</div>
-        <div class="game" onclick="location.href='tic-tac-toe.html'">Tic-Tac-Toe</div>
-        <div class="game" onclick="location.href='memory-match.html'">Memory Match</div>
-        <div class="game" onclick="location.href='snake.html'">Snake</div>
-        <div class="game" onclick="location.href='trivia.html'">Trivia Quiz</div>
-        <div class="game" onclick="location.href='breakout.html'">Breakout</div>
-        <div class="game" onclick="location.href='2048.html'">2048 Puzzle</div>
-        <div class="game" onclick="location.href='flappy-bird.html'">Flappy Bird</div>
-        <div class="game" onclick="location.href='minesweeper.html'">Minesweeper</div>
-        <div class="game" onclick="location.href='rock-paper-scissors.html'">Rock-Paper-Scissors</div>
+    <div>
+        <h1>Mini-Game Hub</h1>
+        <p>Select a game to play:</p>
+        <div class="game-list">
+            <div class="game" onclick="location.href='hangman.html'">
+                <i class="fas fa-hat-wizard"></i>Hangman
+            </div>
+            <div class="game" onclick="location.href='tic-tac-toe.html'">
+                <i class="fas fa-chess-board"></i>Tic-Tac-Toe
+            </div>
+            <div class="game" onclick="location.href='memory-match.html'">
+                <i class="fas fa-brain"></i>Memory Match
+            </div>
+            <div class="game" onclick="location.href='snake.html'">
+                <i class="fas fa-dragon"></i>Snake
+            </div>
+            <div class="game" onclick="location.href='trivia.html'">
+                <i class="fas fa-question-circle"></i>Trivia Quiz
+            </div>
+            <div class="game" onclick="location.href='breakout.html'">
+                <i class="fas fa-gamepad"></i>Breakout
+            </div>
+            <div class="game" onclick="location.href='2048.html'">
+                <i class="fas fa-puzzle-piece"></i>2048 Puzzle
+            </div>
+            <div class="game" onclick="location.href='flappy-bird.html'">
+                <i class="fas fa-crow"></i>Flappy Bird
+            </div>
+            <div class="game" onclick="location.href='minesweeper.html'">
+                <i class="fas fa-bomb"></i>Minesweeper
+            </div>
+            <div class="game" onclick="location.href='rock-paper-scissors.html'">
+                <i class="fas fa-hand-rock"></i>Rock-Paper-Scissors
+            </div>
+        </div>
     </div>
+    <footer>
+        Made with <span>&hearts;</span> in India by Sukhi
+    </footer>
 </body>
 </html>
