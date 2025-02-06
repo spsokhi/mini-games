@@ -9,29 +9,53 @@
     <meta name="author" content="Sukhi">
     <title>Mini-Game Hub</title>
     <style>
+        /* CSS Variables for Dark Mode */
+        :root {
+            --background-color: #121212;
+            --text-color: #ffffff;
+            --game-bg-color: #1e1e1e;
+            --game-border-color: #4a4e69;
+            --game-hover-bg-color: #4a4e69;
+            --game-hover-text-color: #ffffff;
+        }
+
+        /* CSS Variables for Light Mode */
+        .light-mode {
+            --background-color: #f0f4f8;
+            --text-color: #333;
+            --game-bg-color: #ffffff;
+            --game-border-color: #4a4e69;
+            --game-hover-bg-color: #4a4e69;
+            --game-hover-text-color: #ffffff;
+        }
+
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
-            background: linear-gradient(to bottom right, #f0f4f8, #d9e2ec);
-            color: #333;
+            background: var(--background-color);
+            color: var(--text-color);
             text-align: center;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
+
         h1 {
             font-size: 3rem;
             margin-top: 20px;
-            color: #4a4e69;
+            color: var(--text-color);
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         p {
             font-size: 1.2rem;
-            color: #6c757d;
+            color: var(--text-color);
             margin-bottom: 20px;
         }
+
         .game-list {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -40,18 +64,19 @@
             margin: 0 auto;
             max-width: 1200px;
         }
+
         .game {
-            border: 2px solid #4a4e69;
+            border: 2px solid var(--game-border-color);
             padding: 20px;
             text-align: center;
             border-radius: 15px;
             cursor: pointer;
-            background: #ffffff;
+            background: var(--game-bg-color);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
             font-size: 1.1rem;
             font-weight: bold;
-            color: #4a4e69;
+            color: var(--text-color);
             position: relative;
             overflow: hidden;
             height: 150px;
@@ -60,61 +85,112 @@
             justify-content: center;
             align-items: center;
         }
+
         .game:hover {
-            background: #4a4e69;
-            color: #fff;
+            background: var(--game-hover-bg-color);
+            color: var(--game-hover-text-color);
             transform: scale(1.05);
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
         }
-        .game::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.5s ease;
-        }
-        .game:hover::before {
-            transform: scaleX(1);
-        }
+
         .game i {
-            font-size: 3rem;
+            font-size: 3rem; /* Fixed icon size */
             margin-bottom: 10px;
             display: block;
-            color: #4a4e69;
+            color: var(--text-color);
             transition: color 0.3s ease;
         }
+
         .game:hover i {
-            color: #fff;
+            color: var(--game-hover-text-color);
         }
+
         footer {
-            background: #4a4e69;
-            color: #fff;
+            background: var(--game-border-color);
+            color: var(--text-color);
             padding: 15px 0;
             font-size: 1rem;
             text-align: center;
             margin-top: auto;
         }
+
         footer span {
             color: red;
             font-size: 1.2rem;
         }
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 2rem;
+
+        /* Dark/Light Mode Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--game-border-color);
+            color: var(--text-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--game-hover-bg-color);
+            color: var(--game-hover-text-color);
+        }
+
+        /* Unique Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-color);
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 9999; /* Ensure it's on top */
+            flex-direction: column;
+        }
+
+        .loading-text {
+            font-size: 1.5rem;
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-family: 'Arial', sans-serif;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: pulseText 1.5s infinite;
+        }
+
+        .loading-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: conic-gradient(#ff7eb3, #ff758c, #ff7eb3);
+            animation: spinAndPulse 1.5s infinite ease-in-out;
+            box-shadow: 0 0 20px rgba(255, 126, 179, 0.5);
+        }
+
+        @keyframes spinAndPulse {
+            0% {
+                transform: rotate(0deg) scale(1);
             }
-            .game {
-                width: 100%;
-                padding: 15px;
-                font-size: 1rem;
-                height: 120px;
+            50% {
+                transform: rotate(180deg) scale(1.2);
             }
-            .game i {
-                font-size: 2rem;
+            100% {
+                transform: rotate(360deg) scale(1);
+            }
+        }
+
+        @keyframes pulseText {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
             }
         }
     </style>
@@ -122,53 +198,61 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
+    <!-- Dark/Light Mode Toggle Button -->
+    <button id="theme-toggle" class="theme-toggle">Switch to Light Mode</button>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-circle"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+
     <div>
         <h1>Mini-Game Hub</h1>
         <p>Select a game to play:</p>
         <div class="game-list">
             <!-- Existing Games -->
-            <div class="game" onclick="location.href='hangman.html'">
+            <div class="game" data-game="hangman">
                 <i class="fas fa-hat-wizard"></i>Hangman
             </div>
-            <div class="game" onclick="location.href='tic-tac-toe.html'">
+            <div class="game" data-game="tic-tac-toe">
                 <i class="fas fa-chess-board"></i>Tic-Tac-Toe
             </div>
-            <div class="game" onclick="location.href='memory-match.html'">
+            <div class="game" data-game="memory-match">
                 <i class="fas fa-brain"></i>Memory Match
             </div>
-            <div class="game" onclick="location.href='snake.html'">
+            <div class="game" data-game="snake">
                 <i class="fas fa-dragon"></i>Snake
             </div>
-            <div class="game" onclick="location.href='trivia.html'">
+            <div class="game" data-game="trivia">
                 <i class="fas fa-question-circle"></i>Trivia Quiz
             </div>
-            <div class="game" onclick="location.href='breakout.html'">
+            <div class="game" data-game="breakout">
                 <i class="fas fa-gamepad"></i>Breakout
             </div>
-            <div class="game" onclick="location.href='2048.html'">
+            <div class="game" data-game="2048">
                 <i class="fas fa-puzzle-piece"></i>2048 Puzzle
             </div>
-            <div class="game" onclick="location.href='flappy-bird.html'">
+            <div class="game" data-game="flappy-bird">
                 <i class="fas fa-crow"></i>Flappy Bird
             </div>
-            <div class="game" onclick="location.href='minesweeper.html'">
+            <div class="game" data-game="minesweeper">
                 <i class="fas fa-bomb"></i>Minesweeper
             </div>
-            <div class="game" onclick="location.href='rock-paper-scissors.html'">
+            <div class="game" data-game="rock-paper-scissors">
                 <i class="fas fa-hand-rock"></i>Rock-Paper-Scissors
             </div>
-
             <!-- New Games -->
-            <div class="game" onclick="location.href='space-invaders.html'">
+            <div class="game" data-game="space-invaders">
                 <i class="fas fa-space-shuttle"></i>Space Invaders
             </div>
-            <div class="game" onclick="location.href='sudoku.html'">
+            <div class="game" data-game="sudoku">
                 <i class="fas fa-table"></i>Sudoku
             </div>
-            <div class="game" onclick="location.href='frogger.html'">
+            <div class="game" data-game="frogger">
                 <i class="fas fa-frog"></i>Frogger
             </div>
-            <div class="game" onclick="location.href='whack-a-mole.html'">
+            <div class="game" data-game="whack-a-mole">
                 <i class="fas fa-hammer"></i>Whack-a-Mole
             </div>
         </div>
@@ -176,5 +260,65 @@
     <footer>
         Made with <span>&hearts;</span> in India by Sukhi
     </footer>
+
+    <script>
+        // Function to show the loading screen
+        function showLoadingScreen() {
+            const loadingScreen = document.getElementById('loading-screen');
+            loadingScreen.style.display = 'flex';
+        }
+
+        // Function to hide the loading screen
+        function hideLoadingScreen() {
+            const loadingScreen = document.getElementById('loading-screen');
+            loadingScreen.style.display = 'none';
+        }
+
+        // Add event listeners to all game buttons
+        document.querySelectorAll('.game').forEach(game => {
+            game.addEventListener('click', () => {
+                const gameName = game.dataset.game;
+
+                // Show the loading screen
+                showLoadingScreen();
+
+                // Simulate a delay for loading the game (you can replace this with actual game loading logic)
+                setTimeout(() => {
+                    // Hide the loading screen after the delay
+                    hideLoadingScreen();
+
+                    // Redirect to the game page
+                    window.location.href = `${gameName}.html`;
+                }, 1500); // Simulated 1.5-second loading time
+            });
+        });
+
+        // Dark/Light Mode Toggle Logic
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        // Check if user has a saved theme preference
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            body.classList.add('light-mode');
+            themeToggle.textContent = 'Switch to Dark Mode';
+        } else {
+            body.classList.remove('light-mode');
+            themeToggle.textContent = 'Switch to Light Mode';
+        }
+
+        // Toggle between dark and light mode
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('light-mode');
+
+            if (body.classList.contains('light-mode')) {
+                themeToggle.textContent = 'Switch to Dark Mode';
+                localStorage.setItem('theme', 'light'); // Save preference
+            } else {
+                themeToggle.textContent = 'Switch to Light Mode';
+                localStorage.setItem('theme', 'dark'); // Save preference
+            }
+        });
+    </script>
 </body>
 </html>
