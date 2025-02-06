@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird Clone</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: #4a4e69;
+            margin-bottom: 20px;
+        }
+        canvas {
+            border: 2px solid #4a4e69;
+            background: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .game-over {
+            font-size: 1.8rem;
+            color: #e74c3c;
+            margin-top: 20px;
+        }
+        .reset-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background: #4a4e69;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .reset-btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <h1>Flappy Bird Clone</h1>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <p class="game-over" id="game-over-message" style="display: none;">Game Over!</p>
+    <button class="reset-btn" id="reset-btn" style="display: none;">Play Again</button>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Game variables
+        const bird = { x: 50, y: 300, width: 20, height: 20, gravity: 2, lift: -20, velocity: 0 };
+        const pipes = [];
+        let frame = 0;
+        let score = 0;
+        let gameOver = false;
+
+        // Pipe class
+        class Pipe {
+            constructor() {
+                this.top = Math.random() * 200 + 50; // Random height for top pipe
+                this.bottom = Math.random() * 200 + 50; // Random height for bottom pipe
+                this.x = canvas.width;
+                this.width = 50;
+                this.speed = 3;
+            }
+
+            draw() {
+                ctx.fillStyle = "#4a4e69";
+                ctx.fillRect(this.x, 0, this.width, this.top); // Top pipe
+                ctx.fillRect(this.x, canvas.height - this.bottom, this.width, this.bottom); // Bottom pipe
+            }
+
+            update() {
+                this.x -= this.speed;
+            }
+        }
+
+        // Draw bird
+        function drawBird() {
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+        }
+
+        // Update bird position
+        function updateBird() {
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+
+            // Prevent bird from going out of bounds
+            if (bird.y + bird.height > canvas.height) {
+                bird.y = canvas.height - bird.height;
+                bird.velocity = 0;
+                endGame();
+            }
+            if (bird.y < 0) {
+                bird.y = 0;
+                bird.velocity = 0;
+            }
+        }
+
+        // Handle bird jump
+        function jump() {
+            bird.velocity = bird.lift;
+        }
+
+        // Generate pipes
+        function generatePipes() {
+            if (frame % 100 === 0) {
+                pipes.push(new Pipe());
+            }
+        }
+
+        // Draw and update pipes
+        function drawPipes() {
+            pipes.forEach(pipe => pipe.draw());
+        }
+
+        function updatePipes() {
+            pipes.forEach(pipe => pipe.update());
+
+            // Remove pipes that are off-screen
+            pipes.forEach((pipe, index) => {
+                if (pipe.x + pipe.width < 0) {
+                    pipes.splice(index, 1);
+                    score++;
+                }
+            });
+        }
+
+        // Check collisions
+        function checkCollisions() {
+            pipes.forEach(pipe => {
+                // Check collision with top pipe
+                if (
+                    bird.x < pipe.x + pipe.width &&
+                    bird.x + bird.width > pipe.x &&
+                    bird.y < pipe.top
+                ) {
+                    endGame();
+                }
+
+                // Check collision with bottom pipe
+                if (
+                    bird.x < pipe.x + pipe.width &&
+                    bird.x + bird.width > pipe.x &&
+                    bird.y + bird.height > canvas.height - pipe.bottom
+                ) {
+                    endGame();
+                }
+            });
+        }
+
+        // Draw score
+        function drawScore() {
+            ctx.font = "20px Arial";
+            ctx.fillStyle = "#4a4e69";
+            ctx.fillText(`Score: ${score}`, 10, 20);
+        }
+
+        // End game
+        function endGame() {
+            gameOver = true;
+            document.getElementById("game-over-message").style.display = "block";
+            document.getElementById("reset-btn").style.display = "block";
+        }
+
+        // Reset game
+        function resetGame() {
+            bird.y = 300;
+            bird.velocity = 0;
+            pipes.length = 0;
+            frame = 0;
+            score = 0;
+            gameOver = false;
+            document.getElementById("game-over-message").style.display = "none";
+            document.getElementById("reset-btn").style.display = "none";
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (gameOver) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawBird();
+            updateBird();
+
+            generatePipes();
+            drawPipes();
+            updatePipes();
+
+            checkCollisions();
+            drawScore();
+
+            frame++;
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event listeners
+        document.addEventListener("keydown", () => jump());
+        document.getElementById("reset-btn").addEventListener("click", resetGame);
+
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>
