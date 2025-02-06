@@ -52,5 +52,3 @@ We welcome contributions from the community! Here’s how you can help:
 
 - Special thanks to the open-source community for inspiration and resources.
 - Made with ❤️ in India by Sukhi.
-
----
