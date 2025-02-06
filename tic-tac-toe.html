@@ -5,10 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tic-Tac-Toe</title>
     <style>
+        /* CSS Variables for Dark Mode */
+        :root {
+            --background-color: #121212;
+            --text-color: #ffffff;
+            --cell-bg-color: #1e1e1e;
+            --cell-border-color: #4a4e69;
+            --cell-hover-bg-color: #333; /* Darker hover color for better visibility */
+            --button-bg-color: #4a4e69;
+            --button-text-color: #ffffff;
+        }
+
+        /* CSS Variables for Light Mode */
+        .light-mode {
+            --background-color: #f0f4f8;
+            --text-color: #333;
+            --cell-bg-color: #ffffff;
+            --cell-border-color: #4a4e69;
+            --cell-hover-bg-color: #d9e2ec; /* Lighter hover color for better visibility */
+            --button-bg-color: #4a4e69;
+            --button-text-color: #ffffff;
+        }
+
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
-            color: #333;
+            background: var(--background-color);
+            color: var(--text-color);
             text-align: center;
             margin: 0;
             padding: 0;
@@ -17,60 +39,115 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
+
         h1 {
             font-size: 2.5rem;
-            color: #4a4e69;
+            color: var(--text-color);
+            margin-top: 20px; /* Centered at the top */
             margin-bottom: 20px;
         }
+
+        /* Dark/Light Mode Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--button-bg-color);
+            color: var(--button-text-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        .mode-selection {
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background: var(--button-bg-color);
+            color: var(--button-text-color);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .mode-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .mode-btn.disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
         .board {
             display: grid;
             grid-template-columns: repeat(3, 120px);
             gap: 10px;
             margin: 20px auto;
         }
+
         .cell {
             width: 120px;
             height: 120px;
-            background-color: #fff;
+            background-color: var(--cell-bg-color);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 2.5rem;
             font-weight: bold;
-            color: #4a4e69;
-            border: 2px solid #4a4e69;
+            color: var(--text-color);
+            border: 2px solid var(--cell-border-color);
             border-radius: 5px;
             cursor: pointer;
             transition: transform 0.2s ease, background 0.2s ease;
         }
+
         .cell:hover {
-            background-color: #f0f4f8;
+            background-color: var(--cell-hover-bg-color); /* Fixed hover color */
             transform: scale(1.05);
         }
+
         .cell[data-filled="true"] {
             cursor: not-allowed;
             background-color: #e0e0e0;
         }
+
         .status {
             font-size: 1.5rem;
             margin: 10px 0;
-            color: #4a4e69;
+            color: var(--text-color);
         }
+
         .reset-btn {
             margin-top: 20px;
             padding: 10px 20px;
             font-size: 1rem;
-            background: #4a4e69;
-            color: #fff;
+            background: var(--button-bg-color);
+            color: var(--button-text-color);
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: transform 0.2s ease;
         }
+
         .reset-btn:hover {
             transform: scale(1.05);
         }
+
         @media (max-width: 600px) {
             .board {
                 grid-template-columns: repeat(3, 90px);
@@ -84,19 +161,31 @@
     </style>
 </head>
 <body>
+    <!-- Dark/Light Mode Toggle Button -->
+    <button id="theme-toggle" class="theme-toggle">Switch to Light Mode</button>
+
     <h1>Tic-Tac-Toe</h1>
-    <div class="status" id="status">Player X's turn</div>
+    <div class="mode-selection">
+        <button class="mode-btn" id="pvp-btn">Player vs Player</button>
+        <button class="mode-btn" id="ai-btn">Player vs AI</button>
+        <button class="mode-btn disabled" id="online-btn" disabled>Play Online (Coming Soon)</button>
+    </div>
+    <div class="status" id="status">Select a game mode to start!</div>
     <div class="board" id="board"></div>
     <button class="reset-btn" id="reset-btn">Play Again</button>
-
     <script>
         const board = document.getElementById("board");
         const statusText = document.getElementById("status");
         const resetBtn = document.getElementById("reset-btn");
+        const pvpBtn = document.getElementById("pvp-btn");
+        const aiBtn = document.getElementById("ai-btn");
+        const onlineBtn = document.getElementById("online-btn");
+        const themeToggle = document.getElementById("theme-toggle");
 
         let currentPlayer = "X";
         let boardState = ["", "", "", "", "", "", "", "", ""];
-        let gameActive = true;
+        let gameActive = false;
+        let gameMode = ""; // Tracks the selected game mode
 
         function createBoard() {
             board.innerHTML = "";
@@ -112,8 +201,10 @@
         }
 
         function handleCellClick(event) {
+            if (!gameActive) return;
+
             const index = event.target.dataset.index;
-            if (boardState[index] !== "" || !gameActive) return;
+            if (boardState[index] !== "") return;
 
             // Update board state and UI
             boardState[index] = currentPlayer;
@@ -121,8 +212,8 @@
             event.target.setAttribute("data-filled", "true");
 
             // Check for win or draw
-            if (checkWin()) {
-                statusText.innerText = `🎉 Player ${currentPlayer} wins! 🎉`;
+            if (checkWin(currentPlayer)) {
+                statusText.innerText = `🎉 ${currentPlayer === "X" ? "Player X" : "Player O"} wins! 🎉`;
                 gameActive = false;
                 return;
             }
@@ -134,30 +225,132 @@
 
             // Switch player
             currentPlayer = currentPlayer === "X" ? "O" : "X";
-            statusText.innerText = `Player ${currentPlayer}'s turn`;
+            statusText.innerText = `${currentPlayer === "X" ? "Player X" : "Player O"}'s turn`;
+
+            // If AI's turn, make AI move
+            if (gameMode === "AI" && currentPlayer === "O") {
+                setTimeout(makeAIMove, 500); // Simulate AI thinking time
+            }
         }
 
-        function checkWin() {
+        function checkWin(player) {
             const winPatterns = [
                 [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
                 [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
                 [0, 4, 8], [2, 4, 6]             // Diagonals
             ];
             return winPatterns.some(pattern => {
-                return pattern.every(index => boardState[index] === currentPlayer);
+                return pattern.every(index => boardState[index] === player);
             });
+        }
+
+        function makeAIMove() {
+            let aiMove = -1;
+
+            // 1. Check if AI can win in the next move
+            aiMove = findWinningMove("O");
+            if (aiMove === -1) {
+                // 2. Check if the player can win in the next move and block them
+                aiMove = findWinningMove("X");
+            }
+            if (aiMove === -1) {
+                // 3. Pick a random empty cell
+                const emptyCells = boardState
+                    .map((cell, index) => cell === "" ? index : null)
+                    .filter(index => index !== null);
+                aiMove = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            }
+
+            // Make the AI's move
+            boardState[aiMove] = "O";
+            const aiCell = document.querySelector(`.cell[data-index="${aiMove}"]`);
+            aiCell.innerText = "O";
+            aiCell.setAttribute("data-filled", "true");
+
+            // Check for win or draw after AI's move
+            if (checkWin("O")) {
+                statusText.innerText = "🤖 AI wins! 🤖";
+                gameActive = false;
+                return;
+            }
+            if (!boardState.includes("")) {
+                statusText.innerText = "It's a draw!";
+                gameActive = false;
+                return;
+            }
+
+            // Switch back to player's turn
+            currentPlayer = "X";
+            statusText.innerText = "Player X's turn";
+        }
+
+        function findWinningMove(player) {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+                [0, 4, 8], [2, 4, 6]             // Diagonals
+            ];
+
+            for (const pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (boardState[a] === player && boardState[b] === player && boardState[c] === "") {
+                    return c;
+                }
+                if (boardState[a] === player && boardState[c] === player && boardState[b] === "") {
+                    return b;
+                }
+                if (boardState[b] === player && boardState[c] === player && boardState[a] === "") {
+                    return a;
+                }
+            }
+            return -1; // No winning move found
         }
 
         function resetGame() {
             boardState = ["", "", "", "", "", "", "", "", ""];
             currentPlayer = "X";
             gameActive = true;
-            statusText.innerText = "Player X's turn";
+            statusText.innerText = `${gameMode === "AI" ? "Player X's turn" : "Player X's turn"}`;
             createBoard();
         }
 
+        function startGame(mode) {
+            gameMode = mode;
+            gameActive = true;
+            currentPlayer = "X";
+            statusText.innerText = `${gameMode === "AI" ? "Player X's turn" : "Player X's turn"}`;
+            createBoard();
+        }
+
+        // Event Listeners for Game Modes
+        pvpBtn.addEventListener("click", () => startGame("PVP"));
+        aiBtn.addEventListener("click", () => startGame("AI"));
         resetBtn.addEventListener("click", resetGame);
-        createBoard();
+
+        // Dark/Light Mode Toggle Logic
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            themeToggle.textContent = 'Switch to Dark Mode';
+        } else {
+            document.body.classList.remove('light-mode');
+            themeToggle.textContent = 'Switch to Light Mode';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+
+            if (document.body.classList.contains('light-mode')) {
+                themeToggle.textContent = 'Switch to Dark Mode';
+                localStorage.setItem('theme', 'light'); // Save preference
+            } else {
+                themeToggle.textContent = 'Switch to Light Mode';
+                localStorage.setItem('theme', 'dark'); // Save preference
+            }
+        });
+
+        // Initialize Board
+        resetGame();
     </script>
 </body>
 </html>
