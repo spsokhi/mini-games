@@ -15,7 +15,7 @@ Welcome to the **Mini-Game Hub**, a collection of fun and interactive mini-games
 - **Rock-Paper-Scissors**: Compete against the computer in this classic game.
 
 ## How to Play:
-1. Visit the [Live Demo](https://yourusername.github.io/mini-games/) (replace `yourusername` with your GitHub username).
+1. Visit the [Live Demo](https://spsokhi.github.io/mini-games/) 
 2. Select a game from the hub to start playing.
 
 ## Technologies Used:
