@@ -5,46 +5,164 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hangman Game</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        .word-display { font-size: 24px; letter-spacing: 5px; }
-        .letters button { margin: 5px; padding: 10px; font-size: 16px; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: #4a4e69;
+            margin-bottom: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .word-display {
+            font-size: 2rem;
+            letter-spacing: 10px;
+            font-weight: bold;
+            color: #4a4e69;
+        }
+        .letters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+            gap: 10px;
+            width: 80%;
+            max-width: 400px;
+        }
+        .letters button {
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #4a4e69;
+            border-radius: 5px;
+            background: #fff;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .letters button:hover {
+            background: #4a4e69;
+            color: #fff;
+        }
+        .letters button:disabled {
+            background: #ddd;
+            border-color: #ccc;
+            color: #888;
+            cursor: not-allowed;
+        }
+        .hangman {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #e74c3c;
+        }
+        .message {
+            font-size: 1.5rem;
+            margin-top: 20px;
+            color: #4a4e69;
+        }
+        .reset-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background: #4a4e69;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .reset-btn:hover {
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
-    <h1>Hangman Game</h1>
-    <p class="word-display" id="word-display">_ _ _ _ _</p>
-    <div class="letters" id="letters"></div>
-    <p id="message"></p>
+    <div class="container">
+        <h1>Hangman Game</h1>
+        <p class="word-display" id="word-display">_ _ _ _ _</p>
+        <div class="letters" id="letters"></div>
+        <p class="hangman" id="hangman-drawing">TRIES LEFT: <span id="tries-left">6</span></p>
+        <p class="message" id="message"></p>
+        <button class="reset-btn" id="reset-btn" style="display: none;">Play Again</button>
+    </div>
+
     <script>
         const words = ["apple", "banana", "cherry", "grape", "orange"];
         let selectedWord = words[Math.floor(Math.random() * words.length)];
         let guessedLetters = new Set();
-        let displayWord = "_ ".repeat(selectedWord.length);
-        document.getElementById("word-display").textContent = displayWord.trim();
-        
+        let incorrectGuesses = 0;
+        const maxTries = 6;
+
+        const wordDisplay = document.getElementById("word-display");
+        const lettersDiv = document.getElementById("letters");
+        const message = document.getElementById("message");
+        const triesLeft = document.getElementById("tries-left");
+        const resetBtn = document.getElementById("reset-btn");
+
         function updateDisplay() {
-            let display = selectedWord.split('').map(letter => guessedLetters.has(letter) ? letter : "_").join(' ');
-            document.getElementById("word-display").textContent = display;
+            const display = selectedWord.split('').map(letter => guessedLetters.has(letter) ? letter : "_").join(' ');
+            wordDisplay.textContent = display;
+
             if (!display.includes("_")) {
-                document.getElementById("message").textContent = "You Win!";
+                message.textContent = "🎉 You Win! 🎉";
+                endGame();
             }
         }
-        
+
         function createButtons() {
-            const lettersDiv = document.getElementById("letters");
             for (let i = 97; i <= 122; i++) {
-                let btn = document.createElement("button");
+                const btn = document.createElement("button");
                 btn.textContent = String.fromCharCode(i);
-                btn.onclick = function () {
-                    guessedLetters.add(btn.textContent);
-                    btn.disabled = true;
-                    updateDisplay();
-                };
+                btn.onclick = () => handleGuess(btn.textContent);
                 lettersDiv.appendChild(btn);
             }
         }
-        
+
+        function handleGuess(letter) {
+            const buttons = Array.from(lettersDiv.children);
+            const button = buttons.find(btn => btn.textContent === letter);
+
+            if (guessedLetters.has(letter)) return;
+
+            guessedLetters.add(letter);
+            button.disabled = true;
+
+            if (selectedWord.includes(letter)) {
+                updateDisplay();
+            } else {
+                incorrectGuesses++;
+                triesLeft.textContent = maxTries - incorrectGuesses;
+
+                if (incorrectGuesses >= maxTries) {
+                    message.textContent = `❌ You Lose! The word was "${selectedWord}".`;
+                    endGame();
+                }
+            }
+        }
+
+        function endGame() {
+            const buttons = Array.from(lettersDiv.children);
+            buttons.forEach(btn => btn.disabled = true);
+            resetBtn.style.display = "block";
+        }
+
+        resetBtn.onclick = () => {
+            location.reload();
+        };
+
         createButtons();
+        updateDisplay();
     </script>
 </body>
 </html>
