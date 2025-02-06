@@ -156,16 +156,6 @@
             flex-direction: column;
         }
 
-        .loading-text {
-            font-size: 1.5rem;
-            color: var(--text-color);
-            margin-bottom: 20px;
-            font-family: 'Arial', sans-serif;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            animation: pulseText 1.5s infinite;
-        }
-
         .loading-circle {
             width: 80px;
             height: 80px;
@@ -173,6 +163,16 @@
             background: conic-gradient(#ff7eb3, #ff758c, #ff7eb3);
             animation: spinAndPulse 1.5s infinite ease-in-out;
             box-shadow: 0 0 20px rgba(255, 126, 179, 0.5);
+        }
+
+        .loading-text {
+            font-size: 1.5rem;
+            color: var(--text-color);
+            margin-top: 20px; /* Increased spacing between circle and text */
+            font-family: 'Arial', sans-serif;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: pulseText 1.5s infinite;
         }
 
         @keyframes spinAndPulse {
