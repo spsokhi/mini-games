@@ -50,6 +50,12 @@
             margin-top: 20px;
             color: var(--text-color);
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer; /* Make the title clickable */
+            transition: transform 0.3s ease;
+        }
+
+        h1:hover {
+            transform: scale(1.05); /* Slight zoom effect on hover */
         }
 
         p {
@@ -232,6 +238,27 @@
             outline: none;
             border-color: var(--game-hover-bg-color);
         }
+
+        /* Easter Egg Animation */
+        .easter-egg-animation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            color: #ff7eb3;
+            animation: bounce 1s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+        }
     </style>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -247,13 +274,14 @@
     </div>
 
     <div>
-        <h1>Mini-Game Hub</h1>
+        <!-- Easter Egg Title -->
+        <h1 id="game-title">Mini-Game Hub</h1>
         <p>Select a game to play:</p>
 
         <!-- Search Bar -->
         <input type="text" id="search-bar" class="search-bar" placeholder="Search for a game...">
 
-        <div class="game-list">
+        <div class="game-list" id="game-list">
             <!-- Existing Games -->
             <div class="game" data-game="hangman">
                 <i class="fas fa-hat-wizard"></i>Hangman
@@ -403,6 +431,45 @@
                     game.style.display = 'none'; // Hide the game if it doesn't match
                 }
             });
+        });
+
+        // Randomize Game Layout
+        const gameContainer = document.getElementById('game-list');
+        const gameElements = Array.from(gameContainer.children);
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        shuffleArray(gameElements);
+        gameElements.forEach(game => gameContainer.appendChild(game));
+
+        // Easter Egg Logic
+        const gameTitle = document.getElementById('game-title');
+        let clickCount = 0;
+        let easterEggTimeout;
+
+        gameTitle.addEventListener('click', () => {
+            clickCount++;
+            clearTimeout(easterEggTimeout);
+
+            if (clickCount === 5) {
+                const easterEgg = document.createElement('div');
+                easterEgg.classList.add('easter-egg-animation');
+                easterEgg.innerText = '🎉 You found an Easter Egg! 🎉';
+                document.body.appendChild(easterEgg);
+
+                setTimeout(() => {
+                    easterEgg.remove();
+                }, 3000);
+            }
+
+            easterEggTimeout = setTimeout(() => {
+                clickCount = 0; // Reset click count after 2 seconds
+            }, 2000);
         });
     </script>
 </body>
