@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Bird Clone</title>
+    <title>Cheap Flappy Bird</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -47,13 +47,23 @@
         .reset-btn:hover {
             transform: scale(1.05);
         }
+        .start-instructions {
+            font-size: 1.2rem;
+            color: #4a4e69;
+            margin-top: 20px;
+        }
+        .keyboard-icon {
+            font-size: 2rem;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
-    <h1>Flappy Bird Clone</h1>
+    <h1>Cheap Flappy Bird</h1>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <p class="game-over" id="game-over-message" style="display: none;">Game Over!</p>
     <button class="reset-btn" id="reset-btn" style="display: none;">Play Again</button>
+    <p class="start-instructions" id="start-instructions">Press <span>Down Arrow Key</span><span class="keyboard-icon">⬇️ </span> to Start</p>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
@@ -65,6 +75,7 @@
         let frame = 0;
         let score = 0;
         let gameOver = false;
+        let gameStarted = false;
 
         // Pipe class
         class Pipe {
@@ -184,23 +195,25 @@
             frame = 0;
             score = 0;
             gameOver = false;
+            gameStarted = false;
             document.getElementById("game-over-message").style.display = "none";
             document.getElementById("reset-btn").style.display = "none";
+            document.getElementById("start-instructions").style.display = "block";
         }
 
         // Game loop
         function gameLoop() {
+            if (!gameStarted) return;
+
             if (gameOver) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             drawBird();
             updateBird();
-
             generatePipes();
             drawPipes();
             updatePipes();
-
             checkCollisions();
             drawScore();
 
@@ -209,11 +222,21 @@
         }
 
         // Event listeners
-        document.addEventListener("keydown", () => jump());
+        document.addEventListener("keydown", (event) => {
+            if (!gameStarted && event.key === "ArrowDown") {
+                gameStarted = true;
+                document.getElementById("start-instructions").style.display = "none";
+                gameLoop();
+            }
+            if (gameStarted) {
+                jump();
+            }
+        });
+
         document.getElementById("reset-btn").addEventListener("click", resetGame);
 
-        // Start the game
-        gameLoop();
+        // Initial instructions
+        document.getElementById("start-instructions").style.display = "block";
     </script>
 </body>
 </html>
