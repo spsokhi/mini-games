@@ -96,7 +96,6 @@
         <div class="grid" id="grid"></div>
     </div>
     <button class="reset-btn" id="reset-btn">Restart Game</button>
-
     <script>
         const gridSize = 4;
         let board = Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
@@ -163,7 +162,7 @@
             let changed = false;
             for (let r = 0; r < gridSize; r++) {
                 const originalRow = [...board[r]];
-                board[r] = combine(slide(board[r]));
+                board[r] = combine(slide(board[r].reverse())).reverse();
                 if (!arraysEqual(originalRow, board[r])) changed = true;
             }
             return changed;
@@ -173,7 +172,7 @@
             let changed = false;
             for (let r = 0; r < gridSize; r++) {
                 const originalRow = [...board[r]];
-                board[r] = combine(slide(board[r].reverse())).reverse();
+                board[r] = combine(slide(board[r]));
                 if (!arraysEqual(originalRow, board[r])) changed = true;
             }
             return changed;
@@ -223,7 +222,6 @@
             else if (event.key === "ArrowDown") moved = moveDown();
             else if (event.key === "ArrowLeft") moved = moveLeft();
             else if (event.key === "ArrowRight") moved = moveRight();
-
             if (moved) {
                 addRandomTile();
                 document.getElementById("score").innerText = score;
@@ -251,7 +249,6 @@
 
         document.addEventListener("keydown", handleKeyPress);
         document.getElementById("reset-btn").addEventListener("click", initializeGame);
-
         initializeGame();
     </script>
 </body>
