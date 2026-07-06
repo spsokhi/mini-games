@@ -1,0 +1,14 @@
+{
+    "name": "Mini-Game Hub",
+    "short_name": "Mini-Games",
+    "description": "28 mini-games in one hub — fully offline, no dependencies.",
+    "start_url": "./index.html",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#0f1117",
+    "theme_color": "#0f1117",
+    "icons": [
+        { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    ]
+}

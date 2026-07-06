@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asteroids — Mini-Game Hub</title>
+    <style>
+        :root {
+            --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --border: #2a2f3f;
+            --text: #e8eaf2; --muted: #9aa1b5; --accent: #8b5cf6; --accent-2: #22d3ee;
+            --bad: #f87171; --gold: #fbbf24; --shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        body.light-mode {
+            --bg: #eef1f7; --panel: #ffffff; --panel-2: #f3f5fa; --border: #d8dce8;
+            --text: #232735; --muted: #5b6274; --shadow: 0 10px 30px rgba(35,39,53,.12);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(900px 450px at 80% -10%, rgba(139,92,246,.14), transparent 60%), var(--bg);
+            color: var(--text); transition: background-color .3s, color .3s;
+        }
+        .topbar {
+            width: 100%; max-width: 640px; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px; padding: 14px 16px;
+        }
+        .back { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; }
+        .back:hover { color: var(--text); background: var(--panel); }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .top-actions { display: flex; gap: 8px; }
+        .icon-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            width: 40px; height: 40px; border-radius: 10px; font-size: 1.05rem; cursor: pointer;
+        }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        .hud { display: flex; gap: 10px; padding: 4px 16px 12px; flex-wrap: wrap; justify-content: center; }
+        .stat {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+            padding: 7px 16px; text-align: center; min-width: 82px;
+        }
+        .stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+        .stat .value { font-size: 1.2rem; font-weight: 800; }
+        #best-el .value { color: var(--gold); }
+        #lives-el .value { color: var(--bad); }
+
+        .stage { position: relative; width: min(94vw, 620px); }
+        canvas {
+            display: block; width: 100%; height: auto; background: #05070e;
+            border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow);
+            touch-action: none;
+        }
+        .overlay {
+            position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px;
+            align-items: center; justify-content: center; text-align: center; padding: 20px;
+            background: rgba(5,7,14,.72); border-radius: 16px; backdrop-filter: blur(3px);
+        }
+        .overlay.hidden { display: none; }
+        .overlay .big { font-size: 2rem; font-weight: 800; margin: 0; color: #fff; }
+        .overlay .sub { color: #cbd2e0; margin: 0; line-height: 1.7; }
+        .overlay .new-best { color: var(--gold); font-weight: 800; }
+        .btn {
+            padding: 12px 26px; font-size: 1rem; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(139,92,246,.35); transition: transform .15s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .hint { color: var(--muted); font-size: .88rem; padding: 12px 16px; text-align: center; }
+
+        .touch-controls { display: none; gap: 10px; padding: 12px; }
+        .touch-controls button {
+            width: 68px; height: 60px; font-size: 1.4rem; border-radius: 14px;
+            border: 1px solid var(--border); background: var(--panel); color: var(--text);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .touch-controls button:active { background: var(--accent); }
+        .touch-controls .fire { background: rgba(248,113,113,.15); border-color: var(--bad); }
+        @media (pointer: coarse) { .touch-controls { display: flex; } .hint .kb { display: none; } }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="back" href="index.html">← Hub</a>
+        <h1>☄️ Asteroids</h1>
+        <div class="top-actions">
+            <button id="sound-btn" class="icon-btn" title="Toggle sound">🔊</button>
+            <button id="theme-btn" class="icon-btn" title="Toggle theme">☀️</button>
+        </div>
+    </header>
+
+    <div class="hud">
+        <div class="stat"><div class="label">Score</div><div class="value" id="score">0</div></div>
+        <div class="stat" id="best-el"><div class="label">Best</div><div class="value" id="best">0</div></div>
+        <div class="stat"><div class="label">Wave</div><div class="value" id="wave">1</div></div>
+        <div class="stat" id="lives-el"><div class="label">Lives</div><div class="value" id="lives">3</div></div>
+    </div>
+
+    <div class="stage">
+        <canvas id="gameCanvas" width="620" height="460"></canvas>
+        <div class="overlay" id="overlay">
+            <p class="big" id="ov-title">☄️ Asteroids</p>
+            <p class="sub" id="ov-sub">Blast the rocks — big ones split into small, fast ones!<br>Large 20 · Medium 50 · Small 100</p>
+            <button class="btn" id="ov-btn">Play</button>
+        </div>
+    </div>
+
+    <p class="hint"><span class="kb">← → rotate · ↑ thrust · <b>Space</b> fire · <b>P</b> pause · momentum carries — there are no brakes!</span></p>
+
+    <div class="touch-controls">
+        <button id="t-left">↺</button>
+        <button id="t-right">↻</button>
+        <button id="t-thrust">🚀</button>
+        <button class="fire" id="t-fire">🔫</button>
+    </div>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeBtn.textContent = light ? '🌙' : '☀️';
+        }
+        themeBtn.onclick = () => { localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+        applyTheme();
+
+        let muted = localStorage.getItem('mg-muted') === '1', actx;
+        const soundBtn = document.getElementById('sound-btn');
+        soundBtn.textContent = muted ? '🔇' : '🔊';
+        soundBtn.onclick = () => { muted = !muted; localStorage.setItem('mg-muted', muted ? '1' : '0'); soundBtn.textContent = muted ? '🔇' : '🔊'; };
+        function beep(freq, dur = 0.07, type = 'square', vol = 0.04, slide = 0) {
+            if (muted) return;
+            actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+            const o = actx.createOscillator(), g = actx.createGain();
+            o.type = type; o.frequency.value = freq;
+            if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), actx.currentTime + dur);
+            g.gain.setValueAtTime(vol, actx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+            o.connect(g); g.connect(actx.destination);
+            o.start(); o.stop(actx.currentTime + dur);
+        }
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        const BEST_KEY = 'mg-best-asteroids';
+        const SIZE_R = { 3: 42, 2: 25, 1: 13 };
+        const SIZE_PTS = { 3: 20, 2: 50, 1: 100 };
+
+        let ship, rocks, bullets, particles, stars;
+        let score, lives, wave, invincible, fireCooldown;
+        let keys = {};
+        let state = 'menu', last = 0, t = 0;
+        let best = +localStorage.getItem(BEST_KEY) || 0;
+        document.getElementById('best').textContent = best;
+
+        const overlay = document.getElementById('overlay');
+        const ovTitle = document.getElementById('ov-title');
+        const ovSub = document.getElementById('ov-sub');
+        const ovBtn = document.getElementById('ov-btn');
+
+        stars = Array.from({ length: 70 }, () => ({
+            x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.2 + 0.3, tw: Math.random() * 7
+        }));
+
+        function wrap(e, margin) {
+            if (e.x < -margin) e.x = W + margin;
+            if (e.x > W + margin) e.x = -margin;
+            if (e.y < -margin) e.y = H + margin;
+            if (e.y > H + margin) e.y = -margin;
+        }
+
+        function makeRock(size, x, y) {
+            const speed = (0.6 + Math.random() * 0.8) * (4 - size) * 0.7 + 0.3;
+            const a = Math.random() * Math.PI * 2;
+            const verts = [];
+            const n = 9 + Math.floor(Math.random() * 4);
+            for (let i = 0; i < n; i++) verts.push(0.72 + Math.random() * 0.4);
+            return {
+                x, y, size, verts,
+                dx: Math.cos(a) * speed, dy: Math.sin(a) * speed,
+                rot: Math.random() * 7, rotV: (Math.random() - 0.5) * 0.03,
+            };
+        }
+
+        function spawnWave() {
+            rocks = [];
+            const count = 3 + wave;
+            for (let i = 0; i < count; i++) {
+                let x, y;
+                do {
+                    x = Math.random() * W; y = Math.random() * H;
+                } while (Math.hypot(x - ship.x, y - ship.y) < 150);
+                rocks.push(makeRock(3, x, y));
+            }
+        }
+
+        function newGame() {
+            ship = { x: W / 2, y: H / 2, a: -Math.PI / 2, vx: 0, vy: 0 };
+            bullets = []; particles = [];
+            score = 0; lives = 3; wave = 1;
+            invincible = 140; fireCooldown = 0;
+            spawnWave();
+            updateHud();
+        }
+
+        function updateHud() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+            document.getElementById('wave').textContent = wave;
+            document.getElementById('best').textContent = best;
+        }
+
+        function addScore(n) {
+            score += n;
+            if (score > best) { best = score; localStorage.setItem(BEST_KEY, best); }
+            updateHud();
+        }
+
+        function explode(x, y, n, color) {
+            for (let i = 0; i < n; i++) {
+                const a = Math.random() * Math.PI * 2, s = Math.random() * 3 + 0.5;
+                particles.push({ x, y, dx: Math.cos(a) * s, dy: Math.sin(a) * s, life: 30 + Math.random() * 20, color });
+            }
+        }
+
+        function fire() {
+            if (fireCooldown > 0 || bullets.length >= 4) return;
+            bullets.push({
+                x: ship.x + Math.cos(ship.a) * 14, y: ship.y + Math.sin(ship.a) * 14,
+                dx: Math.cos(ship.a) * 8.5 + ship.vx * 0.4, dy: Math.sin(ship.a) * 8.5 + ship.vy * 0.4,
+                life: 55,
+            });
+            fireCooldown = 12;
+            beep(720, .05, 'square', .04, -350);
+        }
+
+        function splitRock(i) {
+            const r = rocks[i];
+            addScore(SIZE_PTS[r.size]);
+            explode(r.x, r.y, 10 + r.size * 3, '#9aa1b5');
+            beep(140 + r.size * 60, .12, 'sawtooth', .05, -50);
+            if (r.size > 1) {
+                rocks.push(makeRock(r.size - 1, r.x, r.y));
+                rocks.push(makeRock(r.size - 1, r.x, r.y));
+            }
+            rocks.splice(i, 1);
+            if (!rocks.length) {
+                wave++;
+                addScore(100);
+                invincible = Math.max(invincible, 90);
+                spawnWave();
+                beep(660, .1, 'triangle', .06); setTimeout(() => beep(990, .14, 'triangle', .06), 110);
+            }
+        }
+
+        function killShip() {
+            lives--;
+            updateHud();
+            explode(ship.x, ship.y, 26, '#22d3ee');
+            beep(120, .5, 'sawtooth', .08, -60);
+            if (lives <= 0) return gameOver();
+            ship.x = W / 2; ship.y = H / 2;
+            ship.vx = 0; ship.vy = 0; ship.a = -Math.PI / 2;
+            invincible = 180;
+        }
+
+        function gameOver() {
+            state = 'over';
+            const isBest = score >= best && score > 0;
+            ovTitle.textContent = '💥 Ship Destroyed';
+            ovSub.innerHTML = `Score: <b>${score}</b> · Wave ${wave}` +
+                (isBest ? ' · <span class="new-best">🏆 New best!</span>' : ` · Best: ${best}`);
+            ovBtn.textContent = 'Play Again';
+            overlay.classList.remove('hidden');
+        }
+
+        function update(dt) {
+            t += dt;
+            if (fireCooldown > 0) fireCooldown -= dt;
+            if (invincible > 0) invincible -= dt;
+
+            if (keys.left) ship.a -= 0.075 * dt;
+            if (keys.right) ship.a += 0.075 * dt;
+            if (keys.thrust) {
+                ship.vx += Math.cos(ship.a) * 0.13 * dt;
+                ship.vy += Math.sin(ship.a) * 0.13 * dt;
+                const sp = Math.hypot(ship.vx, ship.vy);
+                if (sp > 7) { ship.vx *= 7 / sp; ship.vy *= 7 / sp; }
+                if (Math.floor(t) % 3 === 0) {
+                    particles.push({
+                        x: ship.x - Math.cos(ship.a) * 12, y: ship.y - Math.sin(ship.a) * 12,
+                        dx: -Math.cos(ship.a) * 2 + (Math.random() - 0.5), dy: -Math.sin(ship.a) * 2 + (Math.random() - 0.5),
+                        life: 14, color: '#fbbf24',
+                    });
+                }
+            }
+            if (keys.fire) fire();
+
+            const drag = Math.pow(0.998, dt);
+            ship.vx *= drag; ship.vy *= drag;
+            ship.x += ship.vx * dt; ship.y += ship.vy * dt;
+            wrap(ship, 14);
+
+            bullets.forEach(b => { b.x += b.dx * dt; b.y += b.dy * dt; b.life -= dt; wrap(b, 4); });
+            bullets = bullets.filter(b => b.life > 0);
+
+            rocks.forEach(r => {
+                r.x += r.dx * dt; r.y += r.dy * dt;
+                r.rot += r.rotV * dt;
+                wrap(r, SIZE_R[r.size]);
+            });
+
+            // bullets vs rocks
+            for (let i = rocks.length - 1; i >= 0; i--) {
+                const r = rocks[i], R = SIZE_R[r.size];
+                let hit = false;
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    const b = bullets[j];
+                    if ((b.x - r.x) ** 2 + (b.y - r.y) ** 2 < R * R) {
+                        bullets.splice(j, 1);
+                        hit = true;
+                        break;
+                    }
+                }
+                if (hit) splitRock(i);
+            }
+
+            // ship vs rocks
+            if (invincible <= 0 && state === 'play') {
+                for (const r of rocks) {
+                    const R = SIZE_R[r.size];
+                    if ((ship.x - r.x) ** 2 + (ship.y - r.y) ** 2 < (R + 9) ** 2) {
+                        killShip();
+                        break;
+                    }
+                }
+            }
+
+            particles.forEach(p => { p.x += p.dx * dt; p.y += p.dy * dt; p.life -= dt; });
+            particles = particles.filter(p => p.life > 0);
+        }
+
+        function draw() {
+            ctx.fillStyle = '#05070e';
+            ctx.fillRect(0, 0, W, H);
+
+            stars.forEach(s => {
+                ctx.globalAlpha = 0.35 + Math.sin(t / 40 + s.tw) * 0.25;
+                ctx.fillStyle = '#e8eaf2';
+                ctx.fillRect(s.x, s.y, s.r * 2, s.r * 2);
+            });
+            ctx.globalAlpha = 1;
+
+            // rocks
+            ctx.strokeStyle = '#9aa1b5';
+            ctx.lineWidth = 1.8;
+            rocks.forEach(r => {
+                const R = SIZE_R[r.size];
+                ctx.beginPath();
+                r.verts.forEach((v, i) => {
+                    const a = r.rot + i / r.verts.length * Math.PI * 2;
+                    const x = r.x + Math.cos(a) * R * v, y = r.y + Math.sin(a) * R * v;
+                    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                });
+                ctx.closePath();
+                ctx.stroke();
+            });
+
+            // bullets
+            ctx.fillStyle = '#e8eaf2';
+            bullets.forEach(b => ctx.fillRect(b.x - 1.5, b.y - 1.5, 3, 3));
+
+            // particles
+            particles.forEach(p => {
+                ctx.globalAlpha = Math.min(1, p.life / 20);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
+            });
+            ctx.globalAlpha = 1;
+
+            // ship (blink while invincible)
+            if (lives > 0 && (invincible <= 0 || Math.floor(t / 8) % 2 === 0)) {
+                ctx.save();
+                ctx.translate(ship.x, ship.y);
+                ctx.rotate(ship.a);
+                const grad = ctx.createLinearGradient(-10, 0, 14, 0);
+                grad.addColorStop(0, '#8b5cf6'); grad.addColorStop(1, '#22d3ee');
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(14, 0); ctx.lineTo(-10, 8); ctx.lineTo(-6, 0); ctx.lineTo(-10, -8);
+                ctx.closePath();
+                ctx.stroke();
+                if (keys.thrust && Math.floor(t / 3) % 2 === 0) {
+                    ctx.strokeStyle = '#fbbf24';
+                    ctx.beginPath();
+                    ctx.moveTo(-8, 4); ctx.lineTo(-16, 0); ctx.lineTo(-8, -4);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+        }
+
+        function loop(now) {
+            if (state !== 'play') return;
+            const dt = Math.min((now - (last || now)) / 16.667, 3);
+            last = now;
+            update(dt);
+            if (state === 'play') {
+                draw();
+                requestAnimationFrame(loop);
+            }
+        }
+
+        function begin() {
+            if (state === 'menu' || state === 'over') newGame();
+            state = 'play';
+            overlay.classList.add('hidden');
+            last = 0;
+            requestAnimationFrame(loop);
+        }
+        ovBtn.onclick = begin;
+
+        function pause() {
+            if (state !== 'play') return;
+            state = 'pause';
+            ovTitle.textContent = '⏸️ Paused';
+            ovSub.textContent = '';
+            ovBtn.textContent = 'Resume';
+            overlay.classList.remove('hidden');
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') { e.preventDefault(); keys.left = true; }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); keys.right = true; }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); keys.thrust = true; }
+            else if (e.key === ' ') {
+                e.preventDefault();
+                if (state === 'play') keys.fire = true;
+                else if (state !== 'pause') begin();
+                else begin();
+            } else if (e.key === 'p' || e.key === 'P') {
+                if (state === 'play') pause(); else if (state === 'pause') begin();
+            }
+        });
+        document.addEventListener('keyup', e => {
+            if (e.key === 'ArrowLeft') keys.left = false;
+            else if (e.key === 'ArrowRight') keys.right = false;
+            else if (e.key === 'ArrowUp') keys.thrust = false;
+            else if (e.key === ' ') keys.fire = false;
+        });
+
+        function bindHold(id, prop) {
+            const el = document.getElementById(id);
+            el.addEventListener('pointerdown', e => { e.preventDefault(); keys[prop] = true; });
+            ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
+                el.addEventListener(ev, () => keys[prop] = false));
+        }
+        bindHold('t-left', 'left');
+        bindHold('t-right', 'right');
+        bindHold('t-thrust', 'thrust');
+        bindHold('t-fire', 'fire');
+
+        document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+
+        newGame();
+        draw();
+    </script>
+</body>
+</html>

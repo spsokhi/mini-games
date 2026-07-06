@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lights Out — Mini-Game Hub</title>
+    <style>
+        :root {
+            --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --border: #2a2f3f;
+            --text: #e8eaf2; --muted: #9aa1b5; --accent: #8b5cf6; --accent-2: #22d3ee;
+            --good: #34d399; --gold: #fbbf24; --shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        body.light-mode {
+            --bg: #eef1f7; --panel: #ffffff; --panel-2: #f3f5fa; --border: #d8dce8;
+            --text: #232735; --muted: #5b6274; --shadow: 0 10px 30px rgba(35,39,53,.12);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(900px 450px at 80% -10%, rgba(251,191,36,.12), transparent 60%), var(--bg);
+            color: var(--text); transition: background-color .3s, color .3s;
+        }
+        .topbar {
+            width: 100%; max-width: 520px; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px; padding: 14px 16px;
+        }
+        .back { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; }
+        .back:hover { color: var(--text); background: var(--panel); }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .icon-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            width: 40px; height: 40px; border-radius: 10px; font-size: 1.05rem; cursor: pointer;
+        }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        .modes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 4px 16px 10px; }
+        .mode-btn {
+            padding: 9px 16px; border-radius: 999px; border: 1px solid var(--border);
+            background: var(--panel); color: var(--muted); font-weight: 600; cursor: pointer;
+            transition: all .15s ease;
+        }
+        .mode-btn:hover { border-color: var(--accent); color: var(--text); }
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff; border-color: transparent;
+        }
+
+        .hud { display: flex; gap: 10px; padding-bottom: 14px; flex-wrap: wrap; justify-content: center; }
+        .stat {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+            padding: 7px 18px; text-align: center; min-width: 86px;
+        }
+        .stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+        .stat .value { font-size: 1.25rem; font-weight: 800; }
+        #best-el .value { color: var(--gold); }
+        #par-el .value { color: var(--accent-2); }
+
+        .stage { position: relative; }
+        .grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+            background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
+            padding: 16px; width: min(92vw, 380px); box-shadow: var(--shadow);
+        }
+        .cell {
+            aspect-ratio: 1; border-radius: 12px; cursor: pointer;
+            background: var(--panel-2); border: 1px solid var(--border);
+            transition: all .15s ease; -webkit-tap-highlight-color: transparent;
+        }
+        .cell:hover { border-color: var(--accent); }
+        .cell.on {
+            background: radial-gradient(circle at 35% 30%, #fde68a, #fbbf24 65%, #d97706);
+            border-color: #fbbf24;
+            box-shadow: 0 0 18px rgba(251,191,36,.55), inset 0 -3px 8px rgba(180,83,9,.4);
+        }
+
+        .overlay {
+            position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px;
+            align-items: center; justify-content: center; text-align: center; padding: 20px;
+            background: rgba(10,12,18,.8); border-radius: 18px; backdrop-filter: blur(3px); z-index: 5;
+        }
+        body.light-mode .overlay { background: rgba(240,243,249,.87); }
+        .overlay.hidden { display: none; }
+        .overlay .big { font-size: 1.9rem; font-weight: 800; margin: 0; }
+        .overlay .sub { color: var(--muted); margin: 0; line-height: 1.8; }
+        .overlay .new-best { color: var(--gold); font-weight: 800; }
+        .btn {
+            padding: 12px 26px; font-size: 1rem; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(139,92,246,.35); transition: transform .15s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+
+        .toolbar { display: flex; gap: 8px; padding: 16px; }
+        .tool-btn {
+            padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border);
+            background: var(--panel); color: var(--text); font-weight: 600; cursor: pointer;
+        }
+        .tool-btn:hover { border-color: var(--accent); }
+        .hint { color: var(--muted); font-size: .88rem; padding: 0 16px 20px; text-align: center; max-width: 420px; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="back" href="index.html">← Hub</a>
+        <h1>💡 Lights Out</h1>
+        <button id="theme-btn" class="icon-btn" title="Toggle theme">☀️</button>
+    </header>
+
+    <div class="modes">
+        <button class="mode-btn" data-diff="easy">😊 Easy</button>
+        <button class="mode-btn active" data-diff="medium">🤔 Medium</button>
+        <button class="mode-btn" data-diff="hard">🔥 Hard</button>
+    </div>
+
+    <div class="hud">
+        <div class="stat"><div class="label">Moves</div><div class="value" id="moves">0</div></div>
+        <div class="stat" id="par-el"><div class="label">Par</div><div class="value" id="par">—</div></div>
+        <div class="stat" id="best-el"><div class="label">Best</div><div class="value" id="best">—</div></div>
+    </div>
+
+    <div class="stage">
+        <div class="grid" id="grid"></div>
+        <div class="overlay hidden" id="overlay">
+            <p class="big" id="ov-title"></p>
+            <p class="sub" id="ov-sub"></p>
+            <button class="btn" id="ov-btn">New Puzzle</button>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <button class="tool-btn" id="retry-btn">↩️ Retry Puzzle</button>
+        <button class="tool-btn" id="new-btn">🔄 New Puzzle</button>
+    </div>
+
+    <p class="hint">Tapping a light flips it <b>and its four neighbours</b>. Turn everything off — matching par earns full bragging rights.</p>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeBtn.textContent = light ? '🌙' : '☀️';
+        }
+        themeBtn.onclick = () => { localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+        applyTheme();
+
+        const N = 5;
+        const DIFFS = { easy: 4, medium: 8, hard: 12 };
+        function bestKey(d) { return d === 'medium' ? 'mg-best-lightsout' : 'mg-best-lightsout-' + d; }
+
+        let diff = 'medium', lights, scramble, moves = 0, solved = false;
+        const gridEl = document.getElementById('grid');
+        const overlay = document.getElementById('overlay');
+
+        function showBest() {
+            const b = localStorage.getItem(bestKey(diff));
+            document.getElementById('best').textContent = b ? b + ' mv' : '—';
+        }
+
+        function toggle(i, board) {
+            const r = Math.floor(i / N), c = i % N;
+            [[r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].forEach(([nr, nc]) => {
+                if (nr >= 0 && nr < N && nc >= 0 && nc < N) {
+                    const j = nr * N + nc;
+                    board[j] = !board[j];
+                }
+            });
+        }
+
+        function newPuzzle() {
+            // press `par` distinct random cells starting from all-off → always solvable in par moves
+            const par = DIFFS[diff];
+            const cells = [...Array(N * N).keys()].sort(() => Math.random() - 0.5).slice(0, par);
+            scramble = cells;
+            startFromScramble();
+        }
+
+        function startFromScramble() {
+            lights = new Array(N * N).fill(false);
+            scramble.forEach(i => toggle(i, lights));
+            moves = 0; solved = false;
+            document.getElementById('moves').textContent = 0;
+            document.getElementById('par').textContent = scramble.length;
+            overlay.classList.add('hidden');
+            showBest();
+            render();
+        }
+
+        function render() {
+            gridEl.innerHTML = '';
+            lights.forEach((on, i) => {
+                const d = document.createElement('div');
+                d.className = 'cell' + (on ? ' on' : '');
+                d.onclick = () => press(i);
+                gridEl.appendChild(d);
+            });
+        }
+
+        function press(i) {
+            if (solved) return;
+            toggle(i, lights);
+            moves++;
+            document.getElementById('moves').textContent = moves;
+            render();
+            if (lights.every(v => !v)) win();
+        }
+
+        function win() {
+            solved = true;
+            const par = scramble.length;
+            const key = bestKey(diff);
+            const prev = +localStorage.getItem(key) || Infinity;
+            const isBest = moves < prev;
+            if (isBest) localStorage.setItem(key, moves);
+            const parNote = moves <= par ? '🎯 You matched par — perfect!' : `Par was ${par} — room to shave ${moves - par}.`;
+            document.getElementById('ov-title').textContent = '🌑 Lights Out!';
+            document.getElementById('ov-sub').innerHTML =
+                `Solved in <b>${moves}</b> moves<br>${parNote}<br>` +
+                (isBest ? '<span class="new-best">🏆 New best!</span>' : `Best: ${Math.min(prev, moves)} moves`);
+            showBest();
+            setTimeout(() => overlay.classList.remove('hidden'), 350);
+        }
+
+        document.getElementById('new-btn').onclick = newPuzzle;
+        document.getElementById('ov-btn').onclick = newPuzzle;
+        document.getElementById('retry-btn').onclick = startFromScramble;
+        document.querySelectorAll('.mode-btn').forEach(b => {
+            b.onclick = () => {
+                document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
+                diff = b.dataset.diff;
+                newPuzzle();
+            };
+        });
+
+        newPuzzle();
+    </script>
+</body>
+</html>

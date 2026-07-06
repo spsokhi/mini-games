@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Time — Mini-Game Hub</title>
+    <style>
+        :root {
+            --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --border: #2a2f3f;
+            --text: #e8eaf2; --muted: #9aa1b5; --accent: #8b5cf6; --accent-2: #22d3ee;
+            --good: #34d399; --bad: #f87171; --gold: #fbbf24; --shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        body.light-mode {
+            --bg: #eef1f7; --panel: #ffffff; --panel-2: #f3f5fa; --border: #d8dce8;
+            --text: #232735; --muted: #5b6274; --shadow: 0 10px 30px rgba(35,39,53,.12);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(900px 450px at 80% -10%, rgba(34,211,238,.12), transparent 60%), var(--bg);
+            color: var(--text); transition: background-color .3s, color .3s;
+        }
+        .topbar {
+            width: 100%; max-width: 560px; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px; padding: 14px 16px;
+        }
+        .back { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; }
+        .back:hover { color: var(--text); background: var(--panel); }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .icon-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            width: 40px; height: 40px; border-radius: 10px; font-size: 1.05rem; cursor: pointer;
+        }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        .hud { display: flex; gap: 10px; padding: 4px 16px 14px; flex-wrap: wrap; justify-content: center; }
+        .stat {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+            padding: 7px 16px; text-align: center; min-width: 88px;
+        }
+        .stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+        .stat .value { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+        #best-el .value { color: var(--gold); }
+        #avg-el .value { color: var(--accent-2); }
+
+        .rounds { display: flex; gap: 8px; padding-bottom: 12px; }
+        .dot {
+            width: 40px; height: 26px; border-radius: 8px; background: var(--panel);
+            border: 1px solid var(--border); font-size: .72rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
+        .dot.done { border-color: var(--good); color: var(--good); }
+
+        .zone {
+            width: min(94vw, 560px); height: 340px; border-radius: 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 8px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+            box-shadow: var(--shadow); text-align: center; padding: 20px;
+            transition: background .12s ease;
+        }
+        .zone .big { font-size: clamp(1.6rem, 6vw, 2.4rem); font-weight: 800; color: #fff; margin: 0; }
+        .zone .small { font-size: 1rem; color: rgba(255,255,255,.85); margin: 0; line-height: 1.6; }
+        .zone .ms { font-size: clamp(3rem, 12vw, 4.5rem); font-weight: 800; color: #fff; margin: 0; line-height: 1.1; }
+        .zone.idle { background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+        .zone.waiting { background: #dc2626; }
+        .zone.go { background: #16a34a; }
+        .zone.early { background: #d97706; }
+        .zone.result { background: var(--panel); border: 1px solid var(--border); }
+        .zone.result .big, .zone.result .ms { color: var(--text); }
+        .zone.result .small { color: var(--muted); }
+        .zone .new-best { color: var(--gold); font-weight: 800; }
+
+        .hint { color: var(--muted); font-size: .88rem; padding: 14px 16px; text-align: center; max-width: 480px; }
+        .grades { color: var(--muted); font-size: .8rem; padding-bottom: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="back" href="index.html">← Hub</a>
+        <h1>⚡ Reaction Time</h1>
+        <button id="theme-btn" class="icon-btn" title="Toggle theme">☀️</button>
+    </header>
+
+    <div class="hud">
+        <div class="stat"><div class="label">Round</div><div class="value" id="round">1/5</div></div>
+        <div class="stat"><div class="label">Last</div><div class="value" id="last">—</div></div>
+        <div class="stat" id="avg-el"><div class="label">Average</div><div class="value" id="avg">—</div></div>
+        <div class="stat" id="best-el"><div class="label">Best Avg</div><div class="value" id="best">—</div></div>
+    </div>
+
+    <div class="rounds" id="rounds"></div>
+
+    <div class="zone idle" id="zone">
+        <p class="big">⚡ Tap to start</p>
+        <p class="small">Wait for green, then tap as fast as you can.<br>5 rounds — lowest average wins.</p>
+    </div>
+
+    <p class="hint">You can also use the <b>Spacebar</b>. Tapping before green costs you a retry of that round!</p>
+    <p class="grades">🏎️ &lt;200ms superhuman · ⚡ 200–250ms sharp · 🙂 250–350ms human · 🐢 350ms+ sleepy</p>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeBtn.textContent = light ? '🌙' : '☀️';
+        }
+        themeBtn.onclick = () => { localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+        applyTheme();
+
+        const BEST_KEY = 'mg-best-reaction', ROUNDS = 5;
+        let state = 'idle'; // idle | waiting | go | early | between | done
+        let times = [], goAt = 0, waitTimer = null;
+        let best = +localStorage.getItem(BEST_KEY) || 0;
+
+        const zone = document.getElementById('zone');
+        const roundsEl = document.getElementById('rounds');
+
+        function renderDots() {
+            roundsEl.innerHTML = '';
+            for (let i = 0; i < ROUNDS; i++) {
+                const d = document.createElement('div');
+                d.className = 'dot' + (times[i] !== undefined ? ' done' : '');
+                d.textContent = times[i] !== undefined ? times[i] : i + 1;
+                roundsEl.appendChild(d);
+            }
+        }
+
+        function renderHud() {
+            document.getElementById('round').textContent = Math.min(times.length + 1, ROUNDS) + '/' + ROUNDS;
+            document.getElementById('last').textContent = times.length ? times[times.length - 1] : '—';
+            document.getElementById('avg').textContent = times.length
+                ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : '—';
+            document.getElementById('best').textContent = best ? best + 'ms' : '—';
+        }
+
+        function setZone(cls, html) {
+            zone.className = 'zone ' + cls;
+            zone.innerHTML = html;
+        }
+
+        function startWaiting() {
+            state = 'waiting';
+            setZone('waiting', '<p class="big">Wait for green…</p><p class="small">Don\'t tap yet!</p>');
+            waitTimer = setTimeout(() => {
+                state = 'go';
+                goAt = performance.now();
+                setZone('go', '<p class="big">TAP NOW! 🟢</p>');
+            }, 1200 + Math.random() * 2800);
+        }
+
+        function grade(avg) {
+            if (avg < 200) return '🏎️ Superhuman!';
+            if (avg < 250) return '⚡ Lightning sharp!';
+            if (avg < 350) return '🙂 Solidly human';
+            return '🐢 Time for a coffee?';
+        }
+
+        function finishRun() {
+            state = 'done';
+            const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+            let isBest = false;
+            if (!best || avg < best) { best = avg; localStorage.setItem(BEST_KEY, best); isBest = true; }
+            renderHud();
+            setZone('result',
+                `<p class="ms">${avg}<span style="font-size:.35em"> ms</span></p>` +
+                `<p class="big">${grade(avg)}</p>` +
+                `<p class="small">${isBest ? '<span class="new-best">🏆 New best average!</span>' : 'Best average: ' + best + 'ms'}<br>Tap to go again</p>`);
+        }
+
+        function tap() {
+            if (state === 'idle' || state === 'done') {
+                times = [];
+                renderDots(); renderHud();
+                startWaiting();
+            } else if (state === 'waiting') {
+                clearTimeout(waitTimer);
+                state = 'early';
+                setZone('early', '<p class="big">😬 Too soon!</p><p class="small">Tap to retry this round</p>');
+            } else if (state === 'early' || state === 'between') {
+                startWaiting();
+            } else if (state === 'go') {
+                const ms = Math.round(performance.now() - goAt);
+                times.push(ms);
+                renderDots(); renderHud();
+                if (times.length >= ROUNDS) return finishRun();
+                state = 'between';
+                setZone('result',
+                    `<p class="ms">${ms}<span style="font-size:.35em"> ms</span></p>` +
+                    `<p class="small">Round ${times.length}/${ROUNDS} · tap for the next one</p>`);
+            }
+        }
+
+        zone.addEventListener('pointerdown', e => { e.preventDefault(); tap(); });
+        document.addEventListener('keydown', e => {
+            if (e.key === ' ') { e.preventDefault(); if (!e.repeat) tap(); }
+        });
+
+        renderDots();
+        renderHud();
+    </script>
+</body>
+</html>

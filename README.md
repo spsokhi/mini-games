@@ -1,6 +1,6 @@
 # Mini-Game Hub 🕹️
 
-Welcome to the **Mini-Game Hub**, a collection of 22 fun and interactive mini-games built with plain HTML, CSS, and JavaScript — every game is a single self-contained HTML file with no dependencies, no build step, and no external assets. It works fully offline.
+Welcome to the **Mini-Game Hub**, a collection of 28 fun and interactive mini-games built with plain HTML, CSS, and JavaScript — every game is a single self-contained HTML file with no dependencies, no build step, and no external assets. It's an installable PWA that works fully offline.
 
 ## Games Included
 
@@ -28,9 +28,17 @@ Welcome to the **Mini-Game Hub**, a collection of 22 fun and interactive mini-ga
 | 🎵 **Simon Says** | Skill | Classic four-tone memory game that speeds up each round |
 | 🟩 **Wordle** | Puzzle | 500+ word bank, tile flips, on-screen keyboard, streaks |
 | 🟪 **Tetris** | Arcade | 7-bag pieces, hold, ghost piece, levels, touch controls |
+| ⚡ **Reaction Time** | Skill | 5-round average, don't tap early! |
+| 🚢 **Battleship** | Classic | Fleet placement, hunt/target AI with parity search |
+| 👻 **Pac-Man** | Arcade | Full maze, 3 ghost AIs, power pellets, tunnels, levels |
+| 🃏 **Solitaire** | Classic | Klondike with drag & drop, undo, auto-finish, draw 1/3 |
+| ☄️ **Asteroids** | Arcade | Thrust & drift physics, splitting rocks, endless waves |
+| 💡 **Lights Out** | Puzzle | Toggle puzzles with par scores, three difficulties |
 
 ## Features
 
+- 📱 **Installable PWA** — add it to your phone's home screen and play everything offline (`manifest.json` + `sw.js` precache every game)
+- 🏅 **Achievements** — 29 badges earned automatically from your scores across all games (🏅 button on the hub)
 - 🌗 **Dark / light theme** — toggle once, remembered across every game
 - 🏆 **High scores & best times** — saved locally and shown as badges on the hub
 - 📱 **Mobile friendly** — swipe gestures, on-screen D-pads, and touch controls throughout

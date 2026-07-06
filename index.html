@@ -6,6 +6,9 @@
     <meta name="description" content="A collection of fun mini-games built with HTML, CSS, and JavaScript.">
     <meta name="keywords" content="mini-games, html, css, javascript, web games, fun games">
     <meta name="author" content="Sukhi">
+    <meta name="theme-color" content="#0f1117">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
     <title>Mini-Game Hub</title>
     <style>
         :root {
@@ -253,12 +256,63 @@
             animation: eggPop .4s ease;
         }
         @keyframes eggPop { from { transform: translate(-50%, -50%) scale(.6); opacity: 0; } }
+
+        /* Achievements */
+        .ach-btn {
+            display: flex; align-items: center; gap: 6px;
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            height: 42px; padding: 0 14px; border-radius: 12px; font-size: .95rem;
+            font-weight: 700; cursor: pointer; transition: transform .15s ease, border-color .15s ease;
+        }
+        .ach-btn:hover { transform: translateY(-2px); border-color: var(--gold); }
+        .ach-btn span { color: var(--gold); }
+        .ach-modal {
+            position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+            background: rgba(10,12,18,.7); backdrop-filter: blur(4px); z-index: 100; padding: 18px;
+        }
+        .ach-modal.hidden { display: none; }
+        .ach-card {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 20px;
+            box-shadow: var(--shadow); width: min(680px, 96vw); max-height: 84vh;
+            display: flex; flex-direction: column; overflow: hidden;
+            animation: eggPop .25s ease;
+        }
+        .ach-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 22px 12px;
+        }
+        .ach-head h2 { margin: 0; font-size: 1.3rem; }
+        .ach-head .progress { color: var(--muted); font-size: .9rem; font-weight: 600; }
+        .ach-head .progress b { color: var(--gold); }
+        .ach-close {
+            background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+            width: 36px; height: 36px; border-radius: 10px; font-size: 1rem; cursor: pointer;
+        }
+        .ach-close:hover { border-color: var(--accent); }
+        .ach-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 10px; padding: 6px 22px 22px; overflow-y: auto;
+        }
+        .ach {
+            display: flex; gap: 10px; align-items: center;
+            background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px;
+            padding: 10px 12px;
+        }
+        .ach .ach-icon { font-size: 1.7rem; line-height: 1; }
+        .ach .ach-name { font-weight: 700; font-size: .88rem; }
+        .ach .ach-desc { color: var(--muted); font-size: .75rem; line-height: 1.35; }
+        .ach.locked { opacity: .45; }
+        .ach.locked .ach-icon { filter: grayscale(1); }
+        .ach.earned { border-color: rgba(251,191,36,.5); box-shadow: 0 0 12px rgba(251,191,36,.12); }
     </style>
 </head>
 <body>
     <header class="topbar">
         <div class="brand" title="Mini-Game Hub"><span class="logo">🕹️</span><span>Mini-Game Hub</span></div>
-        <button id="theme-toggle" class="icon-btn" title="Toggle theme">☀️</button>
+        <div style="display:flex;gap:8px;align-items:center">
+            <button id="ach-btn" class="ach-btn" title="Achievements">🏅 <span id="ach-count">0/0</span></button>
+            <button id="theme-toggle" class="icon-btn" title="Toggle theme">☀️</button>
+        </div>
     </header>
 
     <section class="hero">
@@ -276,6 +330,17 @@
 
     <div class="actions">
         <button id="random-game-button" class="btn">🎲 Play a Random Game</button>
+    </div>
+
+    <div class="ach-modal hidden" id="ach-modal">
+        <div class="ach-card">
+            <div class="ach-head">
+                <h2>🏅 Achievements</h2>
+                <div class="progress" id="ach-progress"></div>
+                <button class="ach-close" id="ach-close">✕</button>
+            </div>
+            <div class="ach-grid" id="ach-grid"></div>
+        </div>
     </div>
 
     <footer>Made with <span class="heart">&hearts;</span> in India by Sukhi</footer>
@@ -304,6 +369,12 @@
             { file: 'simon-says', name: 'Simon Says', icon: '🎵', tag: 'skill', desc: 'Repeat the pattern', best: { key: 'mg-best-simon', label: 'Best', suffix: ' rounds' } },
             { file: 'wordle', name: 'Wordle', icon: '🟩', tag: 'puzzle', desc: 'Guess the word in 6', best: { key: 'mg-best-wordle', label: 'Streak' } },
             { file: 'tetris', name: 'Tetris', icon: '🟪', tag: 'arcade', desc: 'The classic stacker', best: { key: 'mg-best-tetris', label: 'Best' } },
+            { file: 'reaction-time', name: 'Reaction Time', icon: '⚡', tag: 'skill', desc: 'How fast are you?', best: { key: 'mg-best-reaction', label: 'Best', suffix: ' ms' } },
+            { file: 'battleship', name: 'Battleship', icon: '🚢', tag: 'classic', desc: 'Sink the AI fleet', best: { key: 'mg-wins-battleship', label: 'Wins' } },
+            { file: 'pacman', name: 'Pac-Man', icon: '👻', tag: 'arcade', desc: 'Dots, ghosts, glory', best: { key: 'mg-best-pacman', label: 'Best' } },
+            { file: 'solitaire', name: 'Solitaire', icon: '🃏', tag: 'classic', desc: 'Klondike, draw 1 or 3', best: { key: 'mg-wins-solitaire', label: 'Wins' } },
+            { file: 'asteroids', name: 'Asteroids', icon: '☄️', tag: 'arcade', desc: 'Blast & drift', best: { key: 'mg-best-asteroids', label: 'Best' } },
+            { file: 'lights-out', name: 'Lights Out', icon: '💡', tag: 'puzzle', desc: 'Switch them all off', best: { key: 'mg-best-lightsout', label: 'Best', suffix: ' moves' } },
         ];
         const TAGS = ['all', 'arcade', 'puzzle', 'classic', 'skill'];
         let activeTag = 'all';
@@ -413,8 +484,81 @@
             eggTimeout = setTimeout(() => { clickCount = 0; }, 2000);
         });
 
+        // ---------- Achievements (derived live from the games' saved scores) ----------
+        const ls = k => localStorage.getItem(k);
+        const gte = (k, n) => +ls(k) >= n;
+        const lteNZ = (k, n) => { const v = +ls(k); return v > 0 && v <= n; };
+        const hasAny = (...keys) => keys.some(k => ls(k) !== null && ls(k) !== '');
+
+        const ACHIEVEMENTS = [
+            { icon: '🐍', name: 'Snake Charmer', desc: 'Eat 20 apples in one Snake run', check: () => gte('mg-best-snake', 20) },
+            { icon: '🧩', name: 'Tile Tactician', desc: 'Score 3,000+ in 2048', check: () => gte('mg-best-2048', 3000) },
+            { icon: '🐦', name: 'Frequent Flyer', desc: 'Score 10 in Flappy Bird', check: () => gte('mg-best-flappy', 10) },
+            { icon: '🥇', name: 'Sky Legend', desc: 'Score 30 in Flappy Bird', check: () => gte('mg-best-flappy', 30) },
+            { icon: '🧱', name: 'Wrecking Ball', desc: 'Score 500+ in Breakout', check: () => gte('mg-best-breakout', 500) },
+            { icon: '👾', name: 'Earth Defender', desc: 'Score 500+ in Space Invaders', check: () => gte('mg-best-invaders', 500) },
+            { icon: '🐸', name: 'Pond Hopper', desc: 'Score 300+ in Frogger', check: () => gte('mg-best-frogger', 300) },
+            { icon: '🔨', name: 'Mole Mauler', desc: 'Score 40+ in Whack-a-Mole', check: () => gte('mg-best-whack', 40) },
+            { icon: '🧠', name: 'Photographic Memory', desc: 'Beat Memory 4×4 in 12 moves or fewer', check: () => lteNZ('mg-best-memory', 12) },
+            { icon: '💣', name: 'Bomb Squad', desc: 'Clear any Minesweeper board', check: () => hasAny('mg-best-mines-easy', 'mg-best-mines-medium', 'mg-best-mines-hard') },
+            { icon: '🔢', name: 'Sudoku Solver', desc: 'Solve any Sudoku puzzle', check: () => hasAny('mg-best-sudoku-easy', 'mg-best-sudoku-medium', 'mg-best-sudoku-hard') },
+            { icon: '🔤', name: 'Word Wizard', desc: '3-win streak in Hangman', check: () => gte('mg-best-hangman', 3) },
+            { icon: '💡', name: 'Know-It-All', desc: 'Score 120+ in one Trivia round', check: () => gte('mg-best-trivia', 120) },
+            { icon: '🟩', name: 'On a Roll', desc: '3-win streak in Wordle', check: () => gte('mg-best-wordle', 3) },
+            { icon: '🎵', name: 'Sharp Ears', desc: 'Reach round 10 in Simon Says', check: () => gte('mg-best-simon', 10) },
+            { icon: '⌨️', name: 'Keyboard Warrior', desc: 'Type 60+ WPM', check: () => gte('mg-best-typing', 60) },
+            { icon: '🏓', name: 'Paddle Pro', desc: 'Win a Pong match vs the AI', check: () => gte('mg-wins-pong', 1) },
+            { icon: '🏒', name: 'Ice Breaker', desc: 'Win an Air Hockey match', check: () => gte('mg-wins-hockey', 1) },
+            { icon: '🔴', name: 'Four Sight', desc: 'Beat the Connect Four AI', check: () => gte('mg-wins-connect4', 1) },
+            { icon: '✊', name: 'Hand of Fate', desc: 'Win 5 Rock-Paper-Scissors matches', check: () => gte('mg-wins-rps', 5) },
+            { icon: '🟪', name: 'Stack Master', desc: 'Score 5,000+ in Tetris', check: () => gte('mg-best-tetris', 5000) },
+            { icon: '🟢', name: 'To the Moon', desc: 'Reach height 500 in Doodle Jump', check: () => gte('mg-best-doodle', 500) },
+            { icon: '⚡', name: 'Lightning Reflexes', desc: 'Average under 250 ms in Reaction Time', check: () => lteNZ('mg-best-reaction', 250) },
+            { icon: '🚢', name: 'Fleet Admiral', desc: 'Win a game of Battleship', check: () => gte('mg-wins-battleship', 1) },
+            { icon: '👻', name: 'Ghost Buster', desc: 'Score 1,000+ in Pac-Man', check: () => gte('mg-best-pacman', 1000) },
+            { icon: '🃏', name: 'Patience Pays', desc: 'Win a game of Solitaire', check: () => gte('mg-wins-solitaire', 1) },
+            { icon: '☄️', name: 'Rock Crusher', desc: 'Score 2,500+ in Asteroids', check: () => gte('mg-best-asteroids', 2500) },
+            { icon: '💡', name: 'Bright Spark', desc: 'Beat Lights Out (medium) in 10 moves or fewer', check: () => lteNZ('mg-best-lightsout', 10) },
+        ];
+        // meta-achievement counts the others
+        ACHIEVEMENTS.push({
+            icon: '🏆', name: 'Trophy Hunter', desc: 'Earn 15 other achievements',
+            check: () => ACHIEVEMENTS.slice(0, -1).filter(a => a.check()).length >= 15
+        });
+
+        const achModal = document.getElementById('ach-modal');
+        function renderAchievements() {
+            const grid = document.getElementById('ach-grid');
+            grid.innerHTML = '';
+            let earned = 0;
+            ACHIEVEMENTS.forEach(a => {
+                const ok = a.check();
+                if (ok) earned++;
+                const d = document.createElement('div');
+                d.className = 'ach ' + (ok ? 'earned' : 'locked');
+                d.innerHTML = `<div class="ach-icon">${a.icon}</div>
+                    <div><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div>`;
+                grid.appendChild(d);
+            });
+            document.getElementById('ach-count').textContent = `${earned}/${ACHIEVEMENTS.length}`;
+            document.getElementById('ach-progress').innerHTML = `<b>${earned}</b> of ${ACHIEVEMENTS.length} unlocked`;
+        }
+        document.getElementById('ach-btn').onclick = () => {
+            renderAchievements();
+            achModal.classList.remove('hidden');
+        };
+        document.getElementById('ach-close').onclick = () => achModal.classList.add('hidden');
+        achModal.addEventListener('click', e => { if (e.target === achModal) achModal.classList.add('hidden'); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') achModal.classList.add('hidden'); });
+
         renderChips();
         renderGames();
+        renderAchievements();
+
+        // PWA: offline caching + install support (https/localhost only)
+        if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
     </script>
 </body>
 </html>
