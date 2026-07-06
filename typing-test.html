@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Speed Test — Mini-Game Hub</title>
+    <style>
+        :root {
+            --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --border: #2a2f3f;
+            --text: #e8eaf2; --muted: #9aa1b5; --accent: #8b5cf6; --accent-2: #22d3ee;
+            --good: #34d399; --bad: #f87171; --gold: #fbbf24; --shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        body.light-mode {
+            --bg: #eef1f7; --panel: #ffffff; --panel-2: #f3f5fa; --border: #d8dce8;
+            --text: #232735; --muted: #5b6274; --shadow: 0 10px 30px rgba(35,39,53,.12);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(900px 450px at 80% -10%, rgba(139,92,246,.12), transparent 60%), var(--bg);
+            color: var(--text); transition: background-color .3s, color .3s;
+        }
+        .topbar {
+            width: 100%; max-width: 720px; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px; padding: 14px 16px;
+        }
+        .back { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; }
+        .back:hover { color: var(--text); background: var(--panel); }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .icon-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            width: 40px; height: 40px; border-radius: 10px; font-size: 1.05rem; cursor: pointer;
+        }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        .modes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 4px 16px 10px; }
+        .mode-btn {
+            padding: 9px 18px; border-radius: 999px; border: 1px solid var(--border);
+            background: var(--panel); color: var(--muted); font-weight: 600; cursor: pointer;
+            transition: all .15s ease;
+        }
+        .mode-btn:hover { border-color: var(--accent); color: var(--text); }
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff; border-color: transparent;
+        }
+
+        .hud { display: flex; gap: 10px; padding-bottom: 14px; flex-wrap: wrap; justify-content: center; }
+        .stat {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+            padding: 7px 18px; text-align: center; min-width: 90px;
+        }
+        .stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+        .stat .value { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+        #time-el .value { color: var(--accent-2); }
+        #best-el .value { color: var(--gold); }
+
+        .stage { position: relative; width: min(94vw, 700px); }
+        .words-box {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+            padding: 22px 26px; box-shadow: var(--shadow); cursor: text;
+            height: 148px; overflow: hidden; position: relative;
+        }
+        .words {
+            font-size: 1.35rem; line-height: 2.2rem; letter-spacing: .3px;
+            color: var(--muted); user-select: none; word-break: normal;
+            transition: margin-top .12s ease;
+        }
+        .words .word { margin-right: .55ch; display: inline-block; }
+        .words .word.done-ok { color: var(--good); }
+        .words .word.done-bad { color: var(--bad); text-decoration: underline; }
+        .words .word.current { color: var(--text); }
+        .words .word.current .ok { color: var(--good); }
+        .words .word.current .bad { color: var(--bad); background: rgba(248,113,113,.15); border-radius: 2px; }
+        .words .word.current .caret { border-left: 2px solid var(--accent); animation: caretBlink 1s step-end infinite; margin-left: -1px; }
+        @keyframes caretBlink { 50% { border-color: transparent; } }
+        .focus-note {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            background: rgba(10,12,18,.55); backdrop-filter: blur(2px); border-radius: 16px;
+            color: #fff; font-weight: 700; z-index: 2;
+        }
+        body.light-mode .focus-note { background: rgba(240,243,249,.7); color: var(--text); }
+        .focus-note.hidden { display: none; }
+
+        #hidden-input {
+            position: absolute; opacity: 0; left: 0; top: 0; width: 1px; height: 1px;
+            border: none; padding: 0;
+        }
+
+        .toolbar { display: flex; gap: 8px; padding: 14px 0; justify-content: center; }
+        .tool-btn {
+            padding: 10px 20px; border-radius: 10px; border: 1px solid var(--border);
+            background: var(--panel); color: var(--text); font-weight: 600; cursor: pointer;
+        }
+        .tool-btn:hover { border-color: var(--accent); }
+
+        .overlay {
+            position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px;
+            align-items: center; justify-content: center; text-align: center; padding: 20px;
+            background: rgba(10,12,18,.85); border-radius: 16px; backdrop-filter: blur(3px); z-index: 5;
+        }
+        body.light-mode .overlay { background: rgba(240,243,249,.9); }
+        .overlay.hidden { display: none; }
+        .overlay .wpm-big { font-size: 3rem; font-weight: 800; margin: 0; line-height: 1.1;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .overlay .wpm-label { color: var(--muted); font-size: .85rem; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 6px; }
+        .overlay .sub { color: var(--muted); margin: 0; line-height: 1.8; }
+        .overlay .new-best { color: var(--gold); font-weight: 800; }
+        .btn {
+            margin-top: 8px; padding: 11px 24px; font-size: 1rem; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(139,92,246,.35); transition: transform .15s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .hint { color: var(--muted); font-size: .88rem; padding: 4px 16px 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="back" href="index.html">← Hub</a>
+        <h1>⌨️ Typing Speed Test</h1>
+        <button id="theme-btn" class="icon-btn" title="Toggle theme">☀️</button>
+    </header>
+
+    <div class="modes">
+        <button class="mode-btn" data-secs="15">⚡ 15s</button>
+        <button class="mode-btn active" data-secs="30">⏱️ 30s</button>
+        <button class="mode-btn" data-secs="60">🕐 60s</button>
+    </div>
+
+    <div class="hud">
+        <div class="stat" id="time-el"><div class="label">Time</div><div class="value" id="time">30</div></div>
+        <div class="stat"><div class="label">WPM</div><div class="value" id="wpm">0</div></div>
+        <div class="stat"><div class="label">Accuracy</div><div class="value" id="acc">100%</div></div>
+        <div class="stat" id="best-el"><div class="label">Best WPM</div><div class="value" id="best">—</div></div>
+    </div>
+
+    <div class="stage">
+        <div class="words-box" id="words-box">
+            <div class="words" id="words"></div>
+            <div class="focus-note hidden" id="focus-note">Click here to keep typing</div>
+            <input id="hidden-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        </div>
+        <div class="overlay hidden" id="overlay">
+            <p class="wpm-big" id="ov-wpm">0</p>
+            <p class="wpm-label">words per minute</p>
+            <p class="sub" id="ov-sub"></p>
+            <button class="btn" id="ov-btn">Try Again</button>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <button class="tool-btn" id="restart-btn">↻ Restart</button>
+    </div>
+    <p class="hint">Click the box and start typing — the timer starts on your first keystroke. Space moves to the next word.</p>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeBtn.textContent = light ? '🌙' : '☀️';
+        }
+        themeBtn.onclick = () => { localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+        applyTheme();
+
+        const POOL = ('the of and to in is you that it he was for on are as with his they at be this have from or one had by word ' +
+            'but not what all were we when your can said there use an each which she do how their if will up other about out many ' +
+            'then them these so some her would make like him into time has look two more write go see number no way could people ' +
+            'my than first water been call who oil its now find long down day did get come made may part over new sound take only ' +
+            'little work know place year live me back give most very after thing our just name good sentence man think say great ' +
+            'where help through much before line right too mean old any same tell boy follow came want show also around form three ' +
+            'small set put end does another well large must big even such because turn here why ask went men read need land ' +
+            'different home us move try kind hand picture again change off play spell air away animal house point page letter ' +
+            'mother answer found study still learn should world high every near add food between own below country plant last ' +
+            'school father keep tree never start city earth eye light thought head under story saw left dont few while along might ' +
+            'close something seem next hard open example begin life always those both paper together got group often run').split(' ');
+
+        const BEST_KEY = 'mg-best-typing';
+        let duration = 30;
+        let words = [], wordEls = [], current = 0;
+        let typedHistory = []; // what was committed for each word
+        let running = false, finished = false, startTime = 0, timerId = null;
+        let keystrokes = 0, wrongKeystrokes = 0;
+
+        const wordsEl = document.getElementById('words');
+        const input = document.getElementById('hidden-input');
+        const box = document.getElementById('words-box');
+        const overlay = document.getElementById('overlay');
+        const focusNote = document.getElementById('focus-note');
+
+        function showBest() {
+            const b = localStorage.getItem(BEST_KEY);
+            document.getElementById('best').textContent = b ? b : '—';
+        }
+
+        function pick() { return POOL[Math.floor(Math.random() * POOL.length)]; }
+
+        function addWords(n) {
+            for (let i = 0; i < n; i++) {
+                const w = pick();
+                words.push(w);
+                const span = document.createElement('span');
+                span.className = 'word';
+                span.textContent = w;
+                wordsEl.appendChild(span);
+                wordEls.push(span);
+            }
+        }
+
+        function setup() {
+            words = []; wordEls = []; typedHistory = [];
+            current = 0; running = false; finished = false;
+            keystrokes = 0; wrongKeystrokes = 0;
+            clearInterval(timerId);
+            wordsEl.innerHTML = '';
+            wordsEl.style.marginTop = '0px';
+            addWords(70);
+            input.value = '';
+            input.disabled = false;
+            document.getElementById('time').textContent = duration;
+            document.getElementById('wpm').textContent = 0;
+            document.getElementById('acc').textContent = '100%';
+            overlay.classList.add('hidden');
+            showBest();
+            renderCurrent();
+            input.focus();
+        }
+
+        // Rebuild the current word with per-char colouring + caret
+        function renderCurrent() {
+            wordEls.forEach((el, i) => el.classList.toggle('current', i === current));
+            const el = wordEls[current];
+            if (!el) return;
+            const target = words[current];
+            const typed = input.value;
+            let html = '';
+            for (let i = 0; i < target.length; i++) {
+                const caret = i === typed.length ? ' caret' : '';
+                if (i < typed.length)
+                    html += `<span class="${typed[i] === target[i] ? 'ok' : 'bad'}${caret}">${target[i]}</span>`;
+                else
+                    html += `<span class="${caret}">${target[i]}</span>`;
+            }
+            // overtyped characters
+            for (let i = target.length; i < typed.length; i++)
+                html += `<span class="bad">${typed[i]}</span>`;
+            if (typed.length >= target.length && typed.length >= 0)
+                html += '<span class="caret"></span>';
+            el.innerHTML = html;
+            scrollToCurrent(el);
+        }
+
+        function scrollToCurrent(el) {
+            const lineH = 35.2; // 2.2rem line-height
+            const offset = el.offsetTop;
+            if (offset > lineH * 1.5) {
+                wordsEl.style.marginTop = -(offset - lineH) + 'px';
+            }
+        }
+
+        function startRun() {
+            running = true;
+            startTime = Date.now();
+            timerId = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                const left = Math.max(0, Math.ceil(duration - elapsed));
+                document.getElementById('time').textContent = left;
+                document.getElementById('wpm').textContent = liveWpm();
+                document.getElementById('acc').textContent = accuracy() + '%';
+                if (elapsed >= duration) finish();
+            }, 250);
+        }
+
+        function correctChars() {
+            let n = 0;
+            typedHistory.forEach((typed, i) => {
+                if (typed === words[i]) n += words[i].length + 1; // word + space
+            });
+            return n;
+        }
+
+        function liveWpm() {
+            const mins = (Date.now() - startTime) / 60000;
+            if (mins <= 0) return 0;
+            // include correct part of the word in progress
+            let chars = correctChars();
+            const target = words[current] || '';
+            for (let i = 0; i < input.value.length && i < target.length; i++)
+                if (input.value[i] === target[i]) chars++;
+            return Math.round((chars / 5) / mins);
+        }
+
+        function accuracy() {
+            if (!keystrokes) return 100;
+            return Math.max(0, Math.round((keystrokes - wrongKeystrokes) / keystrokes * 100));
+        }
+
+        function commitWord() {
+            const typed = input.value;
+            typedHistory[current] = typed;
+            const el = wordEls[current];
+            el.classList.remove('current');
+            el.innerHTML = '';
+            el.textContent = words[current];
+            el.classList.add(typed === words[current] ? 'done-ok' : 'done-bad');
+            current++;
+            if (current > words.length - 25) addWords(40);
+            input.value = '';
+            renderCurrent();
+        }
+
+        function finish() {
+            finished = true; running = false;
+            clearInterval(timerId);
+            input.disabled = true;
+            const wpm = liveWpm();
+            const acc = accuracy();
+            const prevBest = +localStorage.getItem(BEST_KEY) || 0;
+            const isBest = wpm > prevBest;
+            if (isBest) localStorage.setItem(BEST_KEY, wpm);
+            document.getElementById('ov-wpm').textContent = wpm;
+            document.getElementById('ov-sub').innerHTML =
+                `Accuracy: <b>${acc}%</b> · Words completed: <b>${typedHistory.filter((t, i) => t === words[i]).length}</b> · ${duration}s test<br>` +
+                (isBest ? '<span class="new-best">🏆 New best!</span>' : `Best: ${Math.max(prevBest, wpm)} WPM`);
+            overlay.classList.remove('hidden');
+            showBest();
+        }
+
+        input.addEventListener('input', () => {
+            if (finished) return;
+            if (!running && input.value.length) startRun();
+            const v = input.value;
+            if (v.endsWith(' ')) {
+                input.value = v.trimEnd();
+                if (input.value.length) { keystrokes++; commitWord(); }
+                return;
+            }
+            // count keystroke correctness for accuracy (only on additions)
+            const target = words[current];
+            if (v.length) {
+                keystrokes++;
+                const i = v.length - 1;
+                if (i >= target.length || v[i] !== target[i]) wrongKeystrokes++;
+            }
+            renderCurrent();
+        });
+
+        input.addEventListener('blur', () => {
+            if (!finished) focusNote.classList.remove('hidden');
+        });
+        input.addEventListener('focus', () => focusNote.classList.add('hidden'));
+        box.addEventListener('pointerdown', e => { e.preventDefault(); input.focus(); });
+
+        document.getElementById('restart-btn').onclick = setup;
+        document.getElementById('ov-btn').onclick = setup;
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Tab') { e.preventDefault(); setup(); }
+        });
+
+        document.querySelectorAll('.mode-btn').forEach(b => {
+            b.onclick = () => {
+                document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
+                duration = +b.dataset.secs;
+                setup();
+            };
+        });
+
+        setup();
+    </script>
+</body>
+</html>

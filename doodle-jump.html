@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doodle Jump — Mini-Game Hub</title>
+    <style>
+        :root {
+            --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --border: #2a2f3f;
+            --text: #e8eaf2; --muted: #9aa1b5; --accent: #8b5cf6; --accent-2: #22d3ee;
+            --good: #34d399; --bad: #f87171; --gold: #fbbf24; --shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        body.light-mode {
+            --bg: #eef1f7; --panel: #ffffff; --panel-2: #f3f5fa; --border: #d8dce8;
+            --text: #232735; --muted: #5b6274; --shadow: 0 10px 30px rgba(35,39,53,.12);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(900px 450px at 80% -10%, rgba(52,211,153,.1), transparent 60%), var(--bg);
+            color: var(--text); transition: background-color .3s, color .3s;
+        }
+        .topbar {
+            width: 100%; max-width: 520px; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px; padding: 14px 16px;
+        }
+        .back { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; }
+        .back:hover { color: var(--text); background: var(--panel); }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .top-actions { display: flex; gap: 8px; }
+        .icon-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            width: 40px; height: 40px; border-radius: 10px; font-size: 1.05rem; cursor: pointer;
+        }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        .hud { display: flex; gap: 10px; padding: 4px 16px 12px; flex-wrap: wrap; justify-content: center; }
+        .stat {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+            padding: 7px 18px; text-align: center; min-width: 90px;
+        }
+        .stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+        .stat .value { font-size: 1.25rem; font-weight: 800; }
+        #best-el .value { color: var(--gold); }
+
+        .stage { position: relative; width: min(94vw, 380px); }
+        canvas {
+            display: block; width: 100%; height: auto;
+            border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow);
+            touch-action: none;
+        }
+        .overlay {
+            position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px;
+            align-items: center; justify-content: center; text-align: center; padding: 20px;
+            background: rgba(10,12,18,.65); border-radius: 16px; backdrop-filter: blur(2px);
+        }
+        .overlay.hidden { display: none; }
+        .overlay .big { font-size: 2rem; font-weight: 800; margin: 0; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.5); }
+        .overlay .sub { color: #e5e9f2; margin: 0; line-height: 1.7; text-shadow: 0 1px 4px rgba(0,0,0,.5); }
+        .overlay .new-best { color: var(--gold); font-weight: 800; }
+        .btn {
+            padding: 12px 26px; font-size: 1rem; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(139,92,246,.35); transition: transform .15s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .hint { color: var(--muted); font-size: .88rem; padding: 12px 16px; text-align: center; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="back" href="index.html">← Hub</a>
+        <h1>🟢 Doodle Jump</h1>
+        <div class="top-actions">
+            <button id="sound-btn" class="icon-btn" title="Toggle sound">🔊</button>
+            <button id="theme-btn" class="icon-btn" title="Toggle theme">☀️</button>
+        </div>
+    </header>
+
+    <div class="hud">
+        <div class="stat"><div class="label">Height</div><div class="value" id="score">0</div></div>
+        <div class="stat" id="best-el"><div class="label">Best</div><div class="value" id="best">0</div></div>
+    </div>
+
+    <div class="stage">
+        <canvas id="gameCanvas" width="380" height="560"></canvas>
+        <div class="overlay" id="overlay">
+            <p class="big" id="ov-title">🟢 Doodle Jump</p>
+            <p class="sub" id="ov-sub">Bounce up forever!<br>🟩 solid · 🟦 moving · 🟫 breaks · 🌀 spring</p>
+            <button class="btn" id="ov-btn">Play</button>
+        </div>
+    </div>
+
+    <p class="hint"><span class="kb">← → or A/D to steer · </span>on touch, hold the left/right half of the board</p>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeBtn.textContent = light ? '🌙' : '☀️';
+        }
+        themeBtn.onclick = () => { localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+        applyTheme();
+
+        let muted = localStorage.getItem('mg-muted') === '1', actx;
+        const soundBtn = document.getElementById('sound-btn');
+        soundBtn.textContent = muted ? '🔇' : '🔊';
+        soundBtn.onclick = () => { muted = !muted; localStorage.setItem('mg-muted', muted ? '1' : '0'); soundBtn.textContent = muted ? '🔇' : '🔊'; };
+        function beep(freq, dur = 0.07, type = 'square', vol = 0.04, slide = 0) {
+            if (muted) return;
+            actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+            const o = actx.createOscillator(), g = actx.createGain();
+            o.type = type; o.frequency.value = freq;
+            if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), actx.currentTime + dur);
+            g.gain.setValueAtTime(vol, actx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+            o.connect(g); g.connect(actx.destination);
+            o.start(); o.stop(actx.currentTime + dur);
+        }
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        const BEST_KEY = 'mg-best-doodle';
+        const GRAVITY = 0.34, BOUNCE = -11.2, SPRING = -17.5;
+        const PLAT_W = 62, PLAT_H = 13;
+
+        let player, platforms, cameraY, maxHeight, score;
+        let leftPressed = false, rightPressed = false;
+        let state = 'menu', last = 0, facing = 1, squash = 0;
+        let best = +localStorage.getItem(BEST_KEY) || 0;
+        document.getElementById('best').textContent = best;
+
+        const overlay = document.getElementById('overlay');
+        const ovTitle = document.getElementById('ov-title');
+        const ovSub = document.getElementById('ov-sub');
+        const ovBtn = document.getElementById('ov-btn');
+
+        function heightNow() { return Math.max(0, Math.floor((player.startY - maxHeight) / 10)); }
+
+        function spacing() { return 62 + Math.min(38, heightNow() / 40); }
+
+        function makePlatform(y) {
+            const h = heightNow();
+            const r = Math.random();
+            let type = 'static';
+            if (r < Math.min(0.28, 0.05 + h / 900)) type = 'moving';
+            else if (r < Math.min(0.5, 0.1 + h / 700)) type = 'breakable';
+            const p = {
+                x: Math.random() * (W - PLAT_W), y, type,
+                dx: type === 'moving' ? (Math.random() < .5 ? 1 : -1) * (1 + Math.random()) : 0,
+                broken: false,
+                spring: type === 'static' && Math.random() < 0.09,
+            };
+            return p;
+        }
+
+        function reset() {
+            player = { x: W / 2 - 14, y: H - 90, w: 28, h: 30, vy: 0, startY: H - 90 };
+            maxHeight = player.y;
+            cameraY = 0;
+            score = 0;
+            platforms = [{ x: W / 2 - PLAT_W / 2, y: H - 50, type: 'static', dx: 0, broken: false, spring: false }];
+            let y = H - 50 - 60;
+            while (y > -H) {
+                platforms.push(makePlatform(y));
+                y -= 55 + Math.random() * 25;
+            }
+            document.getElementById('score').textContent = 0;
+        }
+
+        function update(dt) {
+            if (leftPressed) { player.x -= 4.6 * dt; facing = -1; }
+            if (rightPressed) { player.x += 4.6 * dt; facing = 1; }
+            // wrap around edges
+            if (player.x < -player.w) player.x = W;
+            if (player.x > W) player.x = -player.w;
+
+            const prevBottom = player.y + player.h;
+            player.vy += GRAVITY * dt;
+            player.y += player.vy * dt;
+            const bottom = player.y + player.h;
+
+            if (player.vy > 0) {
+                for (const p of platforms) {
+                    if (p.broken) continue;
+                    if (prevBottom <= p.y + 4 && bottom >= p.y &&
+                        player.x + player.w - 6 > p.x && player.x + 6 < p.x + PLAT_W) {
+                        player.y = p.y - player.h;
+                        if (p.spring) {
+                            player.vy = SPRING;
+                            beep(700, .12, 'triangle', .06, 400);
+                        } else {
+                            player.vy = BOUNCE;
+                            beep(300, .06, 'square', .03, 150);
+                        }
+                        squash = 8;
+                        if (p.type === 'breakable') { p.broken = true; p.fall = 0; }
+                        break;
+                    }
+                }
+            }
+
+            // broken platforms fall away
+            platforms.forEach(p => {
+                if (p.broken) { p.fall = (p.fall || 0) + 1; p.y += p.fall * 0.4 * dt; }
+                if (p.type === 'moving') {
+                    p.x += p.dx * dt;
+                    if (p.x < 0 || p.x + PLAT_W > W) p.dx *= -1;
+                }
+            });
+
+            // camera follows upward only
+            const targetCam = player.y - H * 0.42;
+            if (targetCam < cameraY) cameraY = targetCam;
+            if (player.y < maxHeight) maxHeight = player.y;
+
+            // spawn above, prune below
+            let top = Math.min(...platforms.map(p => p.y));
+            while (top > cameraY - 60) {
+                top -= spacing() * (0.75 + Math.random() * 0.5);
+                platforms.push(makePlatform(top));
+            }
+            platforms = platforms.filter(p => p.y < cameraY + H + 60);
+
+            score = heightNow();
+            document.getElementById('score').textContent = score;
+            if (squash > 0) squash -= dt;
+
+            // fell off the bottom
+            if (player.y - cameraY > H + 40) gameOver();
+        }
+
+        function gameOver() {
+            state = 'over';
+            beep(200, .3, 'sawtooth', .06, -140);
+            let isBest = false;
+            if (score > best) { best = score; localStorage.setItem(BEST_KEY, best); isBest = true; }
+            document.getElementById('best').textContent = best;
+            ovTitle.textContent = '💫 You fell!';
+            ovSub.innerHTML = `Height: <b>${score}</b>` + (isBest ? ' · <span class="new-best">🏆 New best!</span>' : ` · Best: ${best}`);
+            ovBtn.textContent = 'Play Again';
+            overlay.classList.remove('hidden');
+        }
+
+        function draw() {
+            const light = document.body.classList.contains('light-mode');
+            const sky = ctx.createLinearGradient(0, 0, 0, H);
+            if (light) { sky.addColorStop(0, '#dbeafe'); sky.addColorStop(1, '#f0f9ff'); }
+            else { sky.addColorStop(0, '#111a2e'); sky.addColorStop(1, '#1a1440'); }
+            ctx.fillStyle = sky;
+            ctx.fillRect(0, 0, W, H);
+
+            // parallax dots
+            ctx.fillStyle = light ? 'rgba(59,130,246,.15)' : 'rgba(255,255,255,.08)';
+            for (let i = 0; i < 24; i++) {
+                const dy = ((i * 97 - cameraY * 0.3) % H + H) % H;
+                ctx.beginPath();
+                ctx.arc((i * 53) % W, dy, 2, 0, 7);
+                ctx.fill();
+            }
+
+            platforms.forEach(p => {
+                const sy = p.y - cameraY;
+                if (sy < -20 || sy > H + 20) return;
+                let color = '#34d399';
+                if (p.type === 'moving') color = '#38bdf8';
+                if (p.type === 'breakable') color = p.broken ? 'rgba(146,97,58,.5)' : '#92613a';
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.roundRect(p.x, sy, PLAT_W, PLAT_H, 7);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255,255,255,.25)';
+                ctx.beginPath();
+                ctx.roundRect(p.x + 3, sy + 2, PLAT_W - 6, 4, 3);
+                ctx.fill();
+                if (p.spring && !p.broken) {
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.beginPath();
+                    ctx.roundRect(p.x + PLAT_W / 2 - 7, sy - 8, 14, 8, 3);
+                    ctx.fill();
+                }
+            });
+
+            // player: little green doodler
+            const sx = player.x, sy = player.y - cameraY;
+            const sq = squash > 0 ? 0.15 : 0;
+            ctx.save();
+            ctx.translate(sx + player.w / 2, sy + player.h / 2);
+            ctx.scale((1 + sq) * 1, 1 - sq);
+            // body
+            ctx.fillStyle = '#a3e635';
+            ctx.beginPath();
+            ctx.roundRect(-player.w / 2, -player.h / 2, player.w, player.h, 9);
+            ctx.fill();
+            // belly
+            ctx.fillStyle = 'rgba(255,255,255,.3)';
+            ctx.beginPath();
+            ctx.roundRect(-player.w / 2 + 5, 0, player.w - 10, player.h / 2 - 4, 6);
+            ctx.fill();
+            // eyes
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(facing * 5 - 3, -8, 4.5, 0, 7);
+            ctx.arc(facing * 5 + 5, -8, 4.5, 0, 7);
+            ctx.fill();
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.arc(facing * 5 - 3 + facing * 1.5, -8, 2, 0, 7);
+            ctx.arc(facing * 5 + 5 + facing * 1.5, -8, 2, 0, 7);
+            ctx.fill();
+            // feet
+            ctx.fillStyle = '#65a30d';
+            ctx.beginPath();
+            ctx.roundRect(-player.w / 2 + 2, player.h / 2 - 3, 9, 6, 3);
+            ctx.roundRect(player.w / 2 - 11, player.h / 2 - 3, 9, 6, 3);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function loop(now) {
+            if (state !== 'play') return;
+            const dt = Math.min((now - (last || now)) / 16.667, 3);
+            last = now;
+            update(dt);
+            if (state === 'play') {
+                draw();
+                requestAnimationFrame(loop);
+            }
+        }
+
+        function begin() {
+            reset();
+            state = 'play';
+            overlay.classList.add('hidden');
+            last = 0;
+            requestAnimationFrame(loop);
+        }
+        ovBtn.onclick = begin;
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') leftPressed = true;
+            else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') rightPressed = true;
+            else if ((e.key === ' ' || e.key === 'Enter') && state !== 'play') { e.preventDefault(); begin(); }
+        });
+        document.addEventListener('keyup', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') leftPressed = false;
+            else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') rightPressed = false;
+        });
+
+        // touch: hold left/right half
+        function canvasSide(e) {
+            const rect = canvas.getBoundingClientRect();
+            return (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right';
+        }
+        canvas.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            if (state !== 'play') return;
+            if (canvasSide(e) === 'left') leftPressed = true; else rightPressed = true;
+        });
+        ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev =>
+            canvas.addEventListener(ev, () => { leftPressed = false; rightPressed = false; }));
+
+        reset();
+        draw();
+    </script>
+</body>
+</html>

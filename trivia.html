@@ -3,180 +3,283 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trivia Quiz</title>
+    <title>Trivia Quiz — Mini-Game Hub</title>
     <style>
+        :root {
+            --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --border: #2a2f3f;
+            --text: #e8eaf2; --muted: #9aa1b5; --accent: #8b5cf6; --accent-2: #22d3ee;
+            --good: #34d399; --bad: #f87171; --gold: #fbbf24; --shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        body.light-mode {
+            --bg: #eef1f7; --panel: #ffffff; --panel-2: #f3f5fa; --border: #d8dce8;
+            --text: #232735; --muted: #5b6274; --shadow: 0 10px 30px rgba(35,39,53,.12);
+        }
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
-            color: #333;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(900px 450px at 80% -10%, rgba(251,191,36,.1), transparent 60%), var(--bg);
+            color: var(--text); transition: background-color .3s, color .3s;
         }
-        h1 {
-            font-size: 2.5rem;
-            color: #4a4e69;
-            margin-bottom: 20px;
+        .topbar {
+            width: 100%; max-width: 620px; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px; padding: 14px 16px;
         }
-        .quiz-container {
-            max-width: 500px;
-            margin: auto;
-            padding: 20px;
-            border: 2px solid #4a4e69;
-            border-radius: 10px;
-            background: #fff;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        .back { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; }
+        .back:hover { color: var(--text); background: var(--panel); }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .icon-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            width: 40px; height: 40px; border-radius: 10px; font-size: 1.05rem; cursor: pointer;
         }
-        .question {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            color: #4a4e69;
+        .icon-btn:hover { border-color: var(--accent); }
+
+        .quiz-card {
+            width: min(94vw, 560px); background: var(--panel); border: 1px solid var(--border);
+            border-radius: 18px; padding: 22px; box-shadow: var(--shadow); margin-bottom: 20px;
         }
+        .meta { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-weight: 600; font-size: .92rem; }
+        .meta .score-now { color: var(--gold); }
+
+        .timer-track { height: 8px; background: var(--panel-2); border-radius: 999px; margin: 14px 0 18px; overflow: hidden; }
+        .timer-fill {
+            height: 100%; width: 100%; border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            transition: width .2s linear;
+        }
+        .timer-fill.danger { background: var(--bad); }
+
+        .question { font-size: 1.25rem; font-weight: 700; min-height: 3em; margin: 0 0 16px; line-height: 1.5; }
+        .options { display: grid; gap: 10px; }
         .options button {
-            display: block;
-            width: 100%;
-            margin: 5px 0;
-            padding: 10px;
-            font-size: 1rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 5px;
-            background: #f0f4f8;
-            color: #4a4e69;
-            cursor: pointer;
-            transition: transform 0.2s ease, background 0.2s ease;
+            padding: 13px 16px; font-size: 1rem; font-weight: 600; text-align: left;
+            border: 1px solid var(--border); border-radius: 12px;
+            background: var(--panel-2); color: var(--text); cursor: pointer; transition: all .15s ease;
         }
-        .options button:hover {
-            background: #4a4e69;
-            color: #fff;
-            transform: scale(1.05);
+        .options button:hover:not(:disabled) { border-color: var(--accent); transform: translateX(4px); }
+        .options button.correct { background: rgba(52,211,153,.16); border-color: var(--good); color: var(--good); }
+        .options button.wrong { background: rgba(248,113,113,.14); border-color: var(--bad); color: var(--bad); }
+        .options button:disabled { cursor: default; }
+
+        .feedback { min-height: 1.6em; font-weight: 700; margin: 14px 0 0; }
+        .feedback.good { color: var(--good); }
+        .feedback.bad { color: var(--bad); }
+
+        .btn {
+            padding: 12px 26px; font-size: 1rem; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(139,92,246,.35); transition: transform .15s;
         }
-        .options button.correct {
-            background: #2ecc71;
-            color: #fff;
-        }
-        .options button.wrong {
-            background: #e74c3c;
-            color: #fff;
-        }
-        .next-btn {
-            margin-top: 20px;
-            padding: 10px;
-            font-size: 1rem;
-            background: #4a4e69;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-            display: none;
-        }
-        .next-btn:hover {
-            transform: scale(1.05);
-        }
-        .score {
-            font-size: 1.5rem;
-            margin-top: 20px;
-            color: #4a4e69;
-        }
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 2rem;
-            }
-            .question {
-                font-size: 1.2rem;
-            }
-            .options button {
-                font-size: 0.9rem;
-            }
-        }
+        .btn:hover { transform: translateY(-2px); }
+        .center { text-align: center; }
+        .results { text-align: center; }
+        .results .emoji { font-size: 4rem; margin: 8px 0; }
+        .results h2 { margin: 4px 0 8px; font-size: 1.7rem; }
+        .results .detail { color: var(--muted); line-height: 1.9; }
+        .results .new-best { color: var(--gold); font-weight: 800; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <h1>Trivia Quiz</h1>
-    <div class="quiz-container">
-        <div class="question" id="question"></div>
+    <header class="topbar">
+        <a class="back" href="index.html">← Hub</a>
+        <h1>💡 Trivia Quiz</h1>
+        <button id="theme-btn" class="icon-btn" title="Toggle theme">☀️</button>
+    </header>
+
+    <div class="quiz-card" id="quiz-box">
+        <div class="meta">
+            <span id="progress">Question 1 / 10</span>
+            <span class="score-now" id="score-now">Score: 0</span>
+        </div>
+        <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+        <p class="question" id="question"></p>
         <div class="options" id="options"></div>
-        <button class="next-btn" id="nextBtn">Next Question</button>
-        <div class="score" id="score"></div>
-        <div class="feedback" id="feedback" style="display: none;"></div>
+        <p class="feedback" id="feedback"></p>
+        <div class="center"><button class="btn hidden" id="next-btn">Next →</button></div>
+    </div>
+
+    <div class="quiz-card results hidden" id="results-box">
+        <div class="emoji" id="res-emoji"></div>
+        <h2 id="res-title"></h2>
+        <p class="detail" id="res-detail"></p>
+        <button class="btn" id="restart-btn">Play Again</button>
     </div>
 
     <script>
-        const questions = [
-            { question: "What is the capital of France?", options: ["Paris", "London", "Berlin", "Madrid"], answer: "Paris" },
-            { question: "Who wrote 'To Kill a Mockingbird'?", options: ["Harper Lee", "J.K. Rowling", "Ernest Hemingway", "Mark Twain"], answer: "Harper Lee" },
-            { question: "What is the largest planet in our solar system?", options: ["Mars", "Earth", "Jupiter", "Venus"], answer: "Jupiter" },
-            { question: "Which element has the chemical symbol 'O'?", options: ["Gold", "Oxygen", "Osmium", "Iron"], answer: "Oxygen" }
+        const themeBtn = document.getElementById('theme-btn');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeBtn.textContent = light ? '🌙' : '☀️';
+        }
+        themeBtn.onclick = () => { localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+        applyTheme();
+
+        const BANK = [
+            { q: 'What is the capital of France?', o: ['Paris','London','Berlin','Madrid'], a: 'Paris' },
+            { q: "Who wrote 'To Kill a Mockingbird'?", o: ['Harper Lee','J.K. Rowling','Ernest Hemingway','Mark Twain'], a: 'Harper Lee' },
+            { q: 'What is the largest planet in our solar system?', o: ['Mars','Earth','Jupiter','Venus'], a: 'Jupiter' },
+            { q: "Which element has the chemical symbol 'O'?", o: ['Gold','Oxygen','Osmium','Iron'], a: 'Oxygen' },
+            { q: 'How many continents are there on Earth?', o: ['5','6','7','8'], a: '7' },
+            { q: 'Which is the smallest prime number?', o: ['0','1','2','3'], a: '2' },
+            { q: 'What is the national animal of India?', o: ['Lion','Bengal Tiger','Elephant','Peacock'], a: 'Bengal Tiger' },
+            { q: 'Which planet is known as the Red Planet?', o: ['Venus','Mars','Mercury','Saturn'], a: 'Mars' },
+            { q: 'Who painted the Mona Lisa?', o: ['Van Gogh','Picasso','Leonardo da Vinci','Michelangelo'], a: 'Leonardo da Vinci' },
+            { q: 'What does HTML stand for?', o: ['HyperText Markup Language','HighText Machine Language','Hyperlink Text Mode Language','Home Tool Markup Language'], a: 'HyperText Markup Language' },
+            { q: 'Which ocean is the largest?', o: ['Atlantic','Indian','Arctic','Pacific'], a: 'Pacific' },
+            { q: 'How many players are on a cricket team?', o: ['9','10','11','12'], a: '11' },
+            { q: 'What is the chemical formula of water?', o: ['CO2','H2O','O2','NaCl'], a: 'H2O' },
+            { q: 'Which country hosted the 2020 Summer Olympics?', o: ['China','Brazil','Japan','France'], a: 'Japan' },
+            { q: 'Who invented the telephone?', o: ['Thomas Edison','Alexander Graham Bell','Nikola Tesla','Guglielmo Marconi'], a: 'Alexander Graham Bell' },
+            { q: 'What is the longest river in the world?', o: ['Amazon','Nile','Ganges','Yangtze'], a: 'Nile' },
+            { q: 'How many sides does a hexagon have?', o: ['5','6','7','8'], a: '6' },
+            { q: 'Which gas do plants absorb from the atmosphere?', o: ['Oxygen','Nitrogen','Carbon Dioxide','Hydrogen'], a: 'Carbon Dioxide' },
+            { q: "Which language has the most native speakers?", o: ['English','Hindi','Mandarin Chinese','Spanish'], a: 'Mandarin Chinese' },
+            { q: 'What is the currency of Japan?', o: ['Won','Yuan','Yen','Ringgit'], a: 'Yen' },
+            { q: 'Which is the tallest mountain in the world?', o: ['K2','Kangchenjunga','Mount Everest','Makalu'], a: 'Mount Everest' },
+            { q: 'Who was the first person to walk on the Moon?', o: ['Buzz Aldrin','Yuri Gagarin','Neil Armstrong','Michael Collins'], a: 'Neil Armstrong' },
+            { q: 'What does CPU stand for?', o: ['Central Processing Unit','Computer Personal Unit','Central Program Utility','Core Processing Unit'], a: 'Central Processing Unit' },
+            { q: 'Which animal is known as the Ship of the Desert?', o: ['Horse','Camel','Donkey','Elephant'], a: 'Camel' },
+            { q: 'In which year did World War II end?', o: ['1943','1944','1945','1946'], a: '1945' },
+            { q: 'What is the hardest natural substance on Earth?', o: ['Gold','Iron','Diamond','Quartz'], a: 'Diamond' },
+            { q: 'Which country is famous for the Taj Mahal?', o: ['Pakistan','India','Turkey','Iran'], a: 'India' },
+            { q: 'How many colors are in a rainbow?', o: ['5','6','7','8'], a: '7' },
+            { q: 'Which sport is associated with Wimbledon?', o: ['Golf','Cricket','Tennis','Badminton'], a: 'Tennis' },
+            { q: 'What is the largest mammal in the world?', o: ['African Elephant','Blue Whale','Giraffe','Polar Bear'], a: 'Blue Whale' },
+            { q: "Who is known as the 'Father of Computers'?", o: ['Alan Turing','Charles Babbage','John von Neumann','Bill Gates'], a: 'Charles Babbage' },
+            { q: 'Which planet has the most moons?', o: ['Jupiter','Saturn','Uranus','Neptune'], a: 'Saturn' },
+            { q: 'What is the smallest country in the world?', o: ['Monaco','Malta','Vatican City','San Marino'], a: 'Vatican City' },
+            { q: 'Which vitamin do we get from sunlight?', o: ['Vitamin A','Vitamin B12','Vitamin C','Vitamin D'], a: 'Vitamin D' },
+            { q: 'How many bones are in the adult human body?', o: ['196','206','216','226'], a: '206' },
+            { q: 'Which is the fastest land animal?', o: ['Lion','Cheetah','Leopard','Gazelle'], a: 'Cheetah' },
+            { q: 'What is the capital of Australia?', o: ['Sydney','Melbourne','Canberra','Perth'], a: 'Canberra' },
+            { q: 'Which blood type is the universal donor?', o: ['A+','B+','AB+','O−'], a: 'O−' },
+            { q: 'What does WWW stand for?', o: ['World Wide Web','World Web Window','Wide World Web','Web World Wide'], a: 'World Wide Web' },
+            { q: 'Which instrument has 88 keys?', o: ['Guitar','Violin','Piano','Flute'], a: 'Piano' },
         ];
 
-        let currentQuestionIndex = 0;
-        let score = 0;
+        const ROUND_SIZE = 10, TIME_PER_Q = 15, BEST_KEY = 'mg-best-trivia';
+        let questions = [], idx = 0, score = 0, correctCount = 0;
+        let timeLeft = 0, timerId = null;
 
-        function loadQuestion() {
-            document.getElementById("score").innerText = `Score: ${score}`;
-            document.getElementById("feedback").style.display = "none";
+        const qEl = document.getElementById('question');
+        const optsEl = document.getElementById('options');
+        const feedback = document.getElementById('feedback');
+        const nextBtn = document.getElementById('next-btn');
+        const timerFill = document.getElementById('timer-fill');
 
-            if (currentQuestionIndex < questions.length) {
-                const questionData = questions[currentQuestionIndex];
-                document.getElementById("question").innerText = questionData.question;
-
-                const optionsContainer = document.getElementById("options");
-                optionsContainer.innerHTML = "";
-
-                questionData.options.forEach(option => {
-                    const button = document.createElement("button");
-                    button.innerText = option;
-                    button.onclick = () => checkAnswer(button, option);
-                    optionsContainer.appendChild(button);
-                });
-
-                document.getElementById("nextBtn").style.display = "none";
-            } else {
-                endQuiz();
+        function shuffle(a) {
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
             }
+            return a;
         }
 
-        function checkAnswer(button, selected) {
-            const correct = questions[currentQuestionIndex].answer;
-
-            // Disable all buttons after answering
-            const buttons = document.querySelectorAll(".options button");
-            buttons.forEach(btn => btn.disabled = true);
-
-            // Highlight correct and wrong answers
-            if (selected === correct) {
-                button.classList.add("correct");
-                score++;
-                document.getElementById("feedback").innerText = "🎉 Correct!";
-            } else {
-                button.classList.add("wrong");
-                document.getElementById("feedback").innerText = `❌ Wrong! The correct answer was: ${correct}`;
-            }
-
-            document.getElementById("feedback").style.display = "block";
-            document.getElementById("nextBtn").style.display = "block";
-        }
-
-        function nextQuestion() {
-            currentQuestionIndex++;
+        function startRound() {
+            questions = shuffle([...BANK]).slice(0, ROUND_SIZE);
+            idx = 0; score = 0; correctCount = 0;
+            document.getElementById('results-box').classList.add('hidden');
+            document.getElementById('quiz-box').classList.remove('hidden');
             loadQuestion();
         }
 
-        function endQuiz() {
-            document.getElementById("question").innerText = "Quiz Over!";
-            document.getElementById("options").innerHTML = "";
-            document.getElementById("nextBtn").style.display = "none";
-            document.getElementById("score").innerText = `Final Score: ${score} / ${questions.length}`;
+        function loadQuestion() {
+            const q = questions[idx];
+            document.getElementById('progress').textContent = `Question ${idx + 1} / ${ROUND_SIZE}`;
+            document.getElementById('score-now').textContent = `Score: ${score}`;
+            qEl.textContent = q.q;
+            feedback.textContent = ''; feedback.className = 'feedback';
+            nextBtn.classList.add('hidden');
+            optsEl.innerHTML = '';
+            shuffle([...q.o]).forEach(opt => {
+                const b = document.createElement('button');
+                b.textContent = opt;
+                b.onclick = () => answer(b, opt);
+                optsEl.appendChild(b);
+            });
+            startTimer();
         }
 
-        document.getElementById("nextBtn").addEventListener("click", nextQuestion);
-        loadQuestion();
+        function startTimer() {
+            clearInterval(timerId);
+            timeLeft = TIME_PER_Q;
+            timerFill.style.width = '100%';
+            timerFill.classList.remove('danger');
+            timerId = setInterval(() => {
+                timeLeft -= 0.2;
+                timerFill.style.width = Math.max(0, timeLeft / TIME_PER_Q * 100) + '%';
+                if (timeLeft <= 5) timerFill.classList.add('danger');
+                if (timeLeft <= 0) timeUp();
+            }, 200);
+        }
+
+        function lockOptions() {
+            clearInterval(timerId);
+            const correct = questions[idx].a;
+            optsEl.querySelectorAll('button').forEach(b => {
+                b.disabled = true;
+                if (b.textContent === correct) b.classList.add('correct');
+            });
+        }
+
+        function answer(btn, chosen) {
+            lockOptions();
+            const correct = questions[idx].a;
+            if (chosen === correct) {
+                const bonus = Math.ceil(timeLeft);
+                score += 10 + bonus;
+                correctCount++;
+                feedback.textContent = `🎉 Correct! +10 points, +${bonus} time bonus`;
+                feedback.classList.add('good');
+            } else {
+                btn.classList.add('wrong');
+                feedback.textContent = `❌ Nope — it was "${correct}"`;
+                feedback.classList.add('bad');
+            }
+            document.getElementById('score-now').textContent = `Score: ${score}`;
+            nextBtn.classList.remove('hidden');
+        }
+
+        function timeUp() {
+            lockOptions();
+            feedback.textContent = `⏰ Time's up! It was "${questions[idx].a}"`;
+            feedback.classList.add('bad');
+            nextBtn.classList.remove('hidden');
+        }
+
+        nextBtn.onclick = () => {
+            idx++;
+            if (idx < ROUND_SIZE) loadQuestion();
+            else showResults();
+        };
+
+        function showResults() {
+            clearInterval(timerId);
+            document.getElementById('quiz-box').classList.add('hidden');
+            document.getElementById('results-box').classList.remove('hidden');
+            const pct = correctCount / ROUND_SIZE;
+            let emoji, title;
+            if (pct === 1)       { emoji = '🏆'; title = 'Perfect score!'; }
+            else if (pct >= .8)  { emoji = '🌟'; title = 'Brilliant!'; }
+            else if (pct >= .6)  { emoji = '😎'; title = 'Nice work!'; }
+            else if (pct >= .4)  { emoji = '🙂'; title = 'Not bad!'; }
+            else                 { emoji = '📚'; title = 'Keep practicing!'; }
+            const prevBest = +localStorage.getItem(BEST_KEY) || 0;
+            const isBest = score > prevBest;
+            if (isBest) localStorage.setItem(BEST_KEY, score);
+            document.getElementById('res-emoji').textContent = emoji;
+            document.getElementById('res-title').textContent = title;
+            document.getElementById('res-detail').innerHTML =
+                `You answered <b>${correctCount} / ${ROUND_SIZE}</b> correctly<br>` +
+                `Final score: <b>${score}</b><br>` +
+                (isBest ? '<span class="new-best">🏆 New personal best!</span>' : `Personal best: ${Math.max(prevBest, score)}`);
+        }
+
+        document.getElementById('restart-btn').onclick = startRound;
+        startRound();
     </script>
 </body>
 </html>

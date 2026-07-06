@@ -3,354 +3,301 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe</title>
+    <title>Tic-Tac-Toe — Mini-Game Hub</title>
     <style>
-        /* CSS Variables for Dark Mode */
         :root {
-            --background-color: #121212;
-            --text-color: #ffffff;
-            --cell-bg-color: #1e1e1e;
-            --cell-border-color: #4a4e69;
-            --cell-hover-bg-color: #333; /* Darker hover color for better visibility */
-            --button-bg-color: #4a4e69;
-            --button-text-color: #ffffff;
+            --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --border: #2a2f3f;
+            --text: #e8eaf2; --muted: #9aa1b5; --accent: #8b5cf6; --accent-2: #22d3ee;
+            --x-color: #22d3ee; --o-color: #f472b6; --gold: #fbbf24;
+            --shadow: 0 10px 30px rgba(0,0,0,.35);
         }
-
-        /* CSS Variables for Light Mode */
-        .light-mode {
-            --background-color: #f0f4f8;
-            --text-color: #333;
-            --cell-bg-color: #ffffff;
-            --cell-border-color: #4a4e69;
-            --cell-hover-bg-color: #d9e2ec; /* Lighter hover color for better visibility */
-            --button-bg-color: #4a4e69;
-            --button-text-color: #ffffff;
+        body.light-mode {
+            --bg: #eef1f7; --panel: #ffffff; --panel-2: #f3f5fa; --border: #d8dce8;
+            --text: #232735; --muted: #5b6274; --x-color: #0891b2; --o-color: #db2777;
+            --shadow: 0 10px 30px rgba(35,39,53,.12);
         }
-
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Arial', sans-serif;
-            background: var(--background-color);
-            color: var(--text-color);
-            text-align: center;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(900px 450px at 80% -10%, rgba(34,211,238,.1), transparent 60%), var(--bg);
+            color: var(--text); transition: background-color .3s, color .3s;
         }
-
-        h1 {
-            font-size: 2.5rem;
-            color: var(--text-color);
-            margin-top: 20px; /* Centered at the top */
-            margin-bottom: 20px;
+        .topbar {
+            width: 100%; max-width: 560px; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px; padding: 14px 16px;
         }
-
-        /* Dark/Light Mode Toggle Button */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--button-bg-color);
-            color: var(--button-text-color);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: transform 0.2s ease;
+        .back { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; }
+        .back:hover { color: var(--text); background: var(--panel); }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .icon-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            width: 40px; height: 40px; border-radius: 10px; font-size: 1.05rem; cursor: pointer;
         }
+        .icon-btn:hover { border-color: var(--accent); }
 
-        .theme-toggle:hover {
-            transform: scale(1.05);
-        }
-
-        .mode-selection {
-            margin-bottom: 20px;
-        }
-
+        .modes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 4px 16px 10px; }
         .mode-btn {
-            margin: 5px;
-            padding: 10px 20px;
-            font-size: 1rem;
-            background: var(--button-bg-color);
-            color: var(--button-text-color);
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
+            padding: 9px 16px; border-radius: 999px; border: 1px solid var(--border);
+            background: var(--panel); color: var(--muted); font-weight: 600; cursor: pointer;
+            transition: all .15s ease;
+        }
+        .mode-btn:hover { border-color: var(--accent); color: var(--text); }
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff; border-color: transparent;
         }
 
-        .mode-btn:hover {
-            transform: scale(1.05);
+        .scoreboard { display: flex; gap: 10px; padding-bottom: 12px; }
+        .score-box {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+            padding: 6px 18px; text-align: center; min-width: 84px;
         }
+        .score-box .who { font-size: .75rem; font-weight: 700; letter-spacing: 1px; color: var(--muted); }
+        .score-box .num { font-size: 1.25rem; font-weight: 800; }
+        .score-box.x .num { color: var(--x-color); }
+        .score-box.o .num { color: var(--o-color); }
 
-        .mode-btn.disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
+        .status { font-size: 1.15rem; font-weight: 600; min-height: 1.6em; margin: 2px 0 10px; }
 
         .board {
-            display: grid;
-            grid-template-columns: repeat(3, 120px);
-            gap: 10px;
-            margin: 20px auto;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+            width: min(88vw, 380px); background: var(--panel); border: 1px solid var(--border);
+            border-radius: 16px; padding: 12px; box-shadow: var(--shadow);
         }
-
         .cell {
-            width: 120px;
-            height: 120px;
-            background-color: var(--cell-bg-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: var(--text-color);
-            border: 2px solid var(--cell-border-color);
-            border-radius: 5px;
-            cursor: pointer;
-            transition: transform 0.2s ease, background 0.2s ease;
+            aspect-ratio: 1; background: var(--panel-2); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: clamp(2.4rem, 12vw, 3.6rem); font-weight: 800; cursor: pointer;
+            transition: background .15s ease, transform .1s ease;
+            user-select: none;
         }
+        .cell:hover:not(.filled) { background: var(--border); }
+        .cell:active:not(.filled) { transform: scale(.96); }
+        .cell.filled { cursor: default; }
+        .cell.x { color: var(--x-color); }
+        .cell.o { color: var(--o-color); }
+        .cell.win { background: rgba(251, 191, 36, .18); box-shadow: inset 0 0 0 2px var(--gold); animation: winPulse .5s ease 2; }
+        .cell.placed { animation: place .18s ease; }
+        @keyframes place { from { transform: scale(.4); opacity: 0; } }
+        @keyframes winPulse { 50% { transform: scale(1.05); } }
 
-        .cell:hover {
-            background-color: var(--cell-hover-bg-color); /* Fixed hover color */
-            transform: scale(1.05);
+        .actions { padding: 16px; display: flex; gap: 10px; }
+        .btn {
+            padding: 11px 24px; font-size: 1rem; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(139,92,246,.35); transition: transform .15s;
         }
-
-        .cell[data-filled="true"] {
-            cursor: not-allowed;
-            background-color: #e0e0e0;
-        }
-
-        .status {
-            font-size: 1.5rem;
-            margin: 10px 0;
-            color: var(--text-color);
-        }
-
-        .reset-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 1rem;
-            background: var(--button-bg-color);
-            color: var(--button-text-color);
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-        .reset-btn:hover {
-            transform: scale(1.05);
-        }
-
-        @media (max-width: 600px) {
-            .board {
-                grid-template-columns: repeat(3, 90px);
-            }
-            .cell {
-                width: 90px;
-                height: 90px;
-                font-size: 2rem;
-            }
-        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn.ghost { background: var(--panel); color: var(--muted); border: 1px solid var(--border); box-shadow: none; }
+        .btn.ghost:hover { color: var(--text); }
     </style>
 </head>
 <body>
-    <!-- Dark/Light Mode Toggle Button -->
-    <button id="theme-toggle" class="theme-toggle">Switch to Light Mode</button>
+    <header class="topbar">
+        <a class="back" href="index.html">← Hub</a>
+        <h1>⭕ Tic-Tac-Toe</h1>
+        <button id="theme-btn" class="icon-btn" title="Toggle theme">☀️</button>
+    </header>
 
-    <h1>Tic-Tac-Toe</h1>
-    <div class="mode-selection">
-        <button class="mode-btn" id="pvp-btn">Player vs Player</button>
-        <button class="mode-btn" id="ai-btn">Player vs AI</button>
-        <button class="mode-btn disabled" id="online-btn" disabled>Play Online (Coming Soon)</button>
+    <div class="modes">
+        <button class="mode-btn active" data-mode="pvp">👥 2 Players</button>
+        <button class="mode-btn" data-mode="ai-normal">🤖 AI · Normal</button>
+        <button class="mode-btn" data-mode="ai-hard">🧠 AI · Unbeatable</button>
     </div>
-    <div class="status" id="status">Select a game mode to start!</div>
+
+    <div class="scoreboard">
+        <div class="score-box x"><div class="who">X</div><div class="num" id="score-x">0</div></div>
+        <div class="score-box"><div class="who">DRAWS</div><div class="num" id="score-d">0</div></div>
+        <div class="score-box o"><div class="who" id="o-label">O</div><div class="num" id="score-o">0</div></div>
+    </div>
+
+    <div class="status" id="status">Player X's turn</div>
     <div class="board" id="board"></div>
-    <button class="reset-btn" id="reset-btn">Play Again</button>
+
+    <div class="actions">
+        <button class="btn" id="next-btn">Next Round</button>
+        <button class="btn ghost" id="reset-scores-btn">Reset Scores</button>
+    </div>
+
     <script>
-        const board = document.getElementById("board");
-        const statusText = document.getElementById("status");
-        const resetBtn = document.getElementById("reset-btn");
-        const pvpBtn = document.getElementById("pvp-btn");
-        const aiBtn = document.getElementById("ai-btn");
-        const onlineBtn = document.getElementById("online-btn");
-        const themeToggle = document.getElementById("theme-toggle");
+        const themeBtn = document.getElementById('theme-btn');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeBtn.textContent = light ? '🌙' : '☀️';
+        }
+        themeBtn.onclick = () => { localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+        applyTheme();
 
-        let currentPlayer = "X";
-        let boardState = ["", "", "", "", "", "", "", "", ""];
-        let gameActive = false;
-        let gameMode = ""; // Tracks the selected game mode
+        const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        const STATS_KEY = 'mg-ttt-stats';
+        const boardEl = document.getElementById('board');
+        const statusEl = document.getElementById('status');
 
-        function createBoard() {
-            board.innerHTML = "";
-            boardState.forEach((cell, index) => {
-                const cellDiv = document.createElement("div");
-                cellDiv.classList.add("cell");
-                cellDiv.dataset.index = index;
-                cellDiv.innerText = cell;
-                if (cell !== "") cellDiv.setAttribute("data-filled", "true");
-                cellDiv.addEventListener("click", handleCellClick);
-                board.appendChild(cellDiv);
+        let mode = 'pvp';
+        let cells = Array(9).fill('');
+        let current = 'X';
+        let active = true;
+        let starter = 'X'; // alternates each round
+        let stats = JSON.parse(localStorage.getItem(STATS_KEY) || '{"x":0,"o":0,"d":0}');
+
+        function saveStats() { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); }
+        function renderStats() {
+            document.getElementById('score-x').textContent = stats.x;
+            document.getElementById('score-o').textContent = stats.o;
+            document.getElementById('score-d').textContent = stats.d;
+            document.getElementById('o-label').textContent = mode === 'pvp' ? 'O' : 'AI';
+        }
+
+        function winnerOf(b) {
+            for (const [a, m, c] of WINS)
+                if (b[a] && b[a] === b[m] && b[a] === b[c]) return { player: b[a], line: [a, m, c] };
+            return b.includes('') ? null : { player: 'D', line: [] };
+        }
+
+        function render() {
+            boardEl.innerHTML = '';
+            cells.forEach((v, i) => {
+                const d = document.createElement('div');
+                d.className = 'cell' + (v ? ' filled ' + v.toLowerCase() : '');
+                d.textContent = v;
+                d.onclick = () => humanMove(i);
+                boardEl.appendChild(d);
             });
         }
 
-        function handleCellClick(event) {
-            if (!gameActive) return;
-
-            const index = event.target.dataset.index;
-            if (boardState[index] !== "") return;
-
-            // Update board state and UI
-            boardState[index] = currentPlayer;
-            event.target.innerText = currentPlayer;
-            event.target.setAttribute("data-filled", "true");
-
-            // Check for win or draw
-            if (checkWin(currentPlayer)) {
-                statusText.innerText = `🎉 ${currentPlayer === "X" ? "Player X" : "Player O"} wins! 🎉`;
-                gameActive = false;
-                return;
-            }
-            if (!boardState.includes("")) {
-                statusText.innerText = "It's a draw!";
-                gameActive = false;
-                return;
-            }
-
-            // Switch player
-            currentPlayer = currentPlayer === "X" ? "O" : "X";
-            statusText.innerText = `${currentPlayer === "X" ? "Player X" : "Player O"}'s turn`;
-
-            // If AI's turn, make AI move
-            if (gameMode === "AI" && currentPlayer === "O") {
-                setTimeout(makeAIMove, 500); // Simulate AI thinking time
-            }
+        function humanMove(i) {
+            if (!active || cells[i]) return;
+            if (mode !== 'pvp' && current === 'O') return; // AI's turn
+            place(i);
         }
 
-        function checkWin(player) {
-            const winPatterns = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-                [0, 4, 8], [2, 4, 6]             // Diagonals
-            ];
-            return winPatterns.some(pattern => {
-                return pattern.every(index => boardState[index] === player);
-            });
+        function place(i) {
+            cells[i] = current;
+            const el = boardEl.children[i];
+            el.textContent = current;
+            el.className = 'cell filled placed ' + current.toLowerCase();
+            const w = winnerOf(cells);
+            if (w) return finish(w);
+            current = current === 'X' ? 'O' : 'X';
+            updateStatus();
+            if (mode !== 'pvp' && current === 'O') setTimeout(aiMove, 420);
         }
 
-        function makeAIMove() {
-            let aiMove = -1;
-
-            // 1. Check if AI can win in the next move
-            aiMove = findWinningMove("O");
-            if (aiMove === -1) {
-                // 2. Check if the player can win in the next move and block them
-                aiMove = findWinningMove("X");
-            }
-            if (aiMove === -1) {
-                // 3. Pick a random empty cell
-                const emptyCells = boardState
-                    .map((cell, index) => cell === "" ? index : null)
-                    .filter(index => index !== null);
-                aiMove = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-            }
-
-            // Make the AI's move
-            boardState[aiMove] = "O";
-            const aiCell = document.querySelector(`.cell[data-index="${aiMove}"]`);
-            aiCell.innerText = "O";
-            aiCell.setAttribute("data-filled", "true");
-
-            // Check for win or draw after AI's move
-            if (checkWin("O")) {
-                statusText.innerText = "🤖 AI wins! 🤖";
-                gameActive = false;
-                return;
-            }
-            if (!boardState.includes("")) {
-                statusText.innerText = "It's a draw!";
-                gameActive = false;
-                return;
-            }
-
-            // Switch back to player's turn
-            currentPlayer = "X";
-            statusText.innerText = "Player X's turn";
+        function updateStatus() {
+            if (mode !== 'pvp' && current === 'O') statusEl.textContent = '🤖 AI is thinking…';
+            else statusEl.textContent = `Player ${current}'s turn`;
         }
 
-        function findWinningMove(player) {
-            const winPatterns = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-                [0, 4, 8], [2, 4, 6]             // Diagonals
-            ];
-
-            for (const pattern of winPatterns) {
-                const [a, b, c] = pattern;
-                if (boardState[a] === player && boardState[b] === player && boardState[c] === "") {
-                    return c;
-                }
-                if (boardState[a] === player && boardState[c] === player && boardState[b] === "") {
-                    return b;
-                }
-                if (boardState[b] === player && boardState[c] === player && boardState[a] === "") {
-                    return a;
-                }
-            }
-            return -1; // No winning move found
-        }
-
-        function resetGame() {
-            boardState = ["", "", "", "", "", "", "", "", ""];
-            currentPlayer = "X";
-            gameActive = true;
-            statusText.innerText = `${gameMode === "AI" ? "Player X's turn" : "Player X's turn"}`;
-            createBoard();
-        }
-
-        function startGame(mode) {
-            gameMode = mode;
-            gameActive = true;
-            currentPlayer = "X";
-            statusText.innerText = `${gameMode === "AI" ? "Player X's turn" : "Player X's turn"}`;
-            createBoard();
-        }
-
-        // Event Listeners for Game Modes
-        pvpBtn.addEventListener("click", () => startGame("PVP"));
-        aiBtn.addEventListener("click", () => startGame("AI"));
-        resetBtn.addEventListener("click", resetGame);
-
-        // Dark/Light Mode Toggle Logic
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'light') {
-            document.body.classList.add('light-mode');
-            themeToggle.textContent = 'Switch to Dark Mode';
-        } else {
-            document.body.classList.remove('light-mode');
-            themeToggle.textContent = 'Switch to Light Mode';
-        }
-
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('light-mode');
-
-            if (document.body.classList.contains('light-mode')) {
-                themeToggle.textContent = 'Switch to Dark Mode';
-                localStorage.setItem('theme', 'light'); // Save preference
+        function finish(w) {
+            active = false;
+            if (w.player === 'D') {
+                stats.d++;
+                statusEl.textContent = "🤝 It's a draw!";
             } else {
-                themeToggle.textContent = 'Switch to Light Mode';
-                localStorage.setItem('theme', 'dark'); // Save preference
+                w.line.forEach(i => boardEl.children[i].classList.add('win'));
+                if (w.player === 'X') { stats.x++; statusEl.textContent = '🎉 X wins!'; }
+                else { stats.o++; statusEl.textContent = mode === 'pvp' ? '🎉 O wins!' : '🤖 AI wins!'; }
             }
-        });
+            saveStats();
+            renderStats();
+        }
 
-        // Initialize Board
-        resetGame();
+        // --- AI ---
+        function emptyIdx(b) { return b.map((v, i) => v ? null : i).filter(i => i !== null); }
+
+        function findWinningMove(b, p) {
+            for (const i of emptyIdx(b)) {
+                b[i] = p;
+                const win = winnerOf(b)?.player === p;
+                b[i] = '';
+                if (win) return i;
+            }
+            return -1;
+        }
+
+        function normalAI() {
+            let i = findWinningMove(cells, 'O');
+            if (i === -1) i = findWinningMove(cells, 'X');
+            if (i === -1 && !cells[4]) i = 4;
+            if (i === -1) {
+                const corners = [0, 2, 6, 8].filter(c => !cells[c]);
+                if (corners.length) i = corners[Math.floor(Math.random() * corners.length)];
+            }
+            if (i === -1) {
+                const e = emptyIdx(cells);
+                i = e[Math.floor(Math.random() * e.length)];
+            }
+            return i;
+        }
+
+        function minimax(b, isMax, depth) {
+            const w = winnerOf(b);
+            if (w) {
+                if (w.player === 'O') return 10 - depth;
+                if (w.player === 'X') return depth - 10;
+                return 0;
+            }
+            let bestVal = isMax ? -Infinity : Infinity;
+            for (const i of emptyIdx(b)) {
+                b[i] = isMax ? 'O' : 'X';
+                const v = minimax(b, !isMax, depth + 1);
+                b[i] = '';
+                bestVal = isMax ? Math.max(bestVal, v) : Math.min(bestVal, v);
+            }
+            return bestVal;
+        }
+
+        function hardAI() {
+            let bestVal = -Infinity, bestMove = -1;
+            for (const i of emptyIdx(cells)) {
+                cells[i] = 'O';
+                const v = minimax(cells, false, 0);
+                cells[i] = '';
+                if (v > bestVal) { bestVal = v; bestMove = i; }
+            }
+            return bestMove;
+        }
+
+        function aiMove() {
+            if (!active) return;
+            place(mode === 'ai-hard' ? hardAI() : normalAI());
+        }
+
+        function newRound() {
+            cells = Array(9).fill('');
+            starter = starter === 'X' ? 'O' : 'X';
+            current = starter;
+            active = true;
+            render();
+            updateStatus();
+            if (mode !== 'pvp' && current === 'O') setTimeout(aiMove, 420);
+        }
+
+        document.querySelectorAll('.mode-btn').forEach(b => {
+            b.onclick = () => {
+                document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
+                mode = b.dataset.mode;
+                starter = 'O'; // newRound flips it back to X
+                renderStats();
+                newRound();
+            };
+        });
+        document.getElementById('next-btn').onclick = newRound;
+        document.getElementById('reset-scores-btn').onclick = () => {
+            stats = { x: 0, o: 0, d: 0 };
+            saveStats();
+            renderStats();
+        };
+
+        renderStats();
+        cells = Array(9).fill('');
+        current = 'X'; active = true;
+        render();
+        updateStatus();
     </script>
 </body>
 </html>

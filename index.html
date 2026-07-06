@@ -3,477 +3,418 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Meta Tags for SEO -->
     <meta name="description" content="A collection of fun mini-games built with HTML, CSS, and JavaScript.">
     <meta name="keywords" content="mini-games, html, css, javascript, web games, fun games">
     <meta name="author" content="Sukhi">
     <title>Mini-Game Hub</title>
     <style>
-        /* CSS Variables for Dark Mode */
         :root {
-            --background-color: #121212;
-            --text-color: #ffffff;
-            --game-bg-color: #1e1e1e;
-            --game-border-color: #4a4e69;
-            --game-hover-bg-color: #4a4e69;
-            --game-hover-text-color: #ffffff;
+            --bg: #0f1117;
+            --panel: #171a23;
+            --panel-2: #1e2230;
+            --border: #2a2f3f;
+            --text: #e8eaf2;
+            --muted: #9aa1b5;
+            --accent: #8b5cf6;
+            --accent-2: #22d3ee;
+            --good: #34d399;
+            --gold: #fbbf24;
+            --shadow: 0 10px 30px rgba(0, 0, 0, .35);
         }
-
-        /* CSS Variables for Light Mode */
-        .light-mode {
-            --background-color: #f0f4f8;
-            --text-color: #333;
-            --game-bg-color: #ffffff;
-            --game-border-color: #4a4e69;
-            --game-hover-bg-color: #4a4e69;
-            --game-hover-text-color: #ffffff;
-            --button-text-color: #ffffff; /* White text for buttons in light mode */
-            --footer-text-color: #ffffff; /* White text for footer in light mode */
+        body.light-mode {
+            --bg: #eef1f7;
+            --panel: #ffffff;
+            --panel-2: #f3f5fa;
+            --border: #d8dce8;
+            --text: #232735;
+            --muted: #5b6274;
+            --shadow: 0 10px 30px rgba(35, 39, 53, .12);
         }
-
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             margin: 0;
-            padding: 0;
-            background: var(--background-color);
-            color: var(--text-color);
-            text-align: center;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            background:
+                radial-gradient(1000px 500px at 85% -10%, rgba(139, 92, 246, .14), transparent 60%),
+                radial-gradient(800px 400px at 0% 110%, rgba(34, 211, 238, .10), transparent 60%),
+                var(--bg);
+            color: var(--text);
+            transition: background-color .3s ease, color .3s ease;
+            animation: fadeIn .4s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .topbar {
+            display: flex;
+            align-items: center;
             justify-content: space-between;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            gap: 12px;
+            padding: 18px clamp(16px, 4vw, 40px);
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
         }
-
-        h1 {
-            font-size: 3rem;
-            margin-top: 20px;
-            color: var(--text-color);
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-            cursor: pointer; /* Make the title clickable */
-            transition: transform 0.3s ease;
-            display: inline-block; /* Fix: Limit the width of the h1 */
-            padding: 10px; /* Add padding for better clickability */
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            user-select: none;
         }
-
-        h1:hover {
-            transform: scale(1.05); /* Slight zoom effect on hover */
-        }
-
-        p {
+        .brand .logo { font-size: 1.6rem; }
+        .icon-btn {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
             font-size: 1.2rem;
-            color: var(--text-color);
-            margin-bottom: 20px;
+            cursor: pointer;
+            transition: transform .15s ease, border-color .15s ease;
+        }
+        .icon-btn:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+        .hero { text-align: center; padding: 20px 16px 8px; }
+        h1 {
+            font-size: clamp(2.2rem, 6vw, 3.4rem);
+            margin: 0 0 8px;
+            cursor: pointer;
+            user-select: none;
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: transform .25s ease;
+        }
+        h1:hover { transform: scale(1.03); }
+        .tagline { color: var(--muted); margin: 0 0 20px; font-size: 1.05rem; }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            padding: 0 16px 8px;
+        }
+        .search-bar {
+            width: min(420px, 90vw);
+            padding: 12px 16px;
+            font-size: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--panel);
+            color: var(--text);
+            outline: none;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+        .search-bar:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139, 92, 246, .2); }
+        .search-bar::placeholder { color: var(--muted); }
+
+        .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 8px 16px 4px; }
+        .chip {
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--muted);
+            font-size: .92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s ease;
+        }
+        .chip:hover { border-color: var(--accent); color: var(--text); }
+        .chip.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff;
+            border-color: transparent;
         }
 
         .game-list {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            padding: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+            gap: 16px;
+            padding: 20px clamp(16px, 4vw, 40px) 10px;
             margin: 0 auto;
             max-width: 1200px;
+            width: 100%;
         }
-
         .game {
-            border: 2px solid var(--game-border-color);
-            padding: 20px;
-            text-align: center;
-            border-radius: 15px;
-            cursor: pointer;
-            background: var(--game-bg-color);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: var(--text-color);
             position: relative;
-            overflow: hidden;
-            height: 150px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            gap: 8px;
+            min-height: 160px;
+            padding: 18px 12px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--panel);
+            color: var(--text);
+            text-decoration: none;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.02rem;
+            box-shadow: var(--shadow);
+            transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+            animation: cardIn .4s ease backwards;
         }
+        @keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+        .game:hover, .game:focus-visible {
+            transform: translateY(-5px) scale(1.02);
+            border-color: var(--accent);
+            box-shadow: 0 14px 34px rgba(139, 92, 246, .25);
+            outline: none;
+        }
+        .game .icon { font-size: 2.6rem; line-height: 1; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .3)); }
+        .game .tag {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--muted);
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            padding: 3px 8px;
+            border-radius: 999px;
+        }
+        .game .best {
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--gold);
+            min-height: 1.1em;
+        }
+        .game .desc { font-size: .78rem; font-weight: 400; color: var(--muted); }
 
-        .game:hover {
-            background: var(--game-hover-bg-color);
-            color: var(--game-hover-text-color);
-            transform: scale(1.05);
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
-        }
+        .no-results { color: var(--muted); padding: 40px 16px; text-align: center; font-size: 1.1rem; display: none; }
 
-        .game i {
-            font-size: 3rem; /* Fixed icon size */
-            margin-bottom: 10px;
-            display: block;
-            color: var(--text-color);
-            transition: color 0.3s ease;
+        .actions { text-align: center; padding: 14px 16px 30px; }
+        .btn {
+            padding: 12px 26px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(139, 92, 246, .35);
+            transition: transform .15s ease, box-shadow .15s ease;
         }
-
-        .game:hover i {
-            color: var(--game-hover-text-color);
-        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(139, 92, 246, .45); }
+        .btn:active { transform: translateY(0); }
 
         footer {
-            background: var(--game-border-color);
-            color: var(--footer-text-color); /* Use footer text color variable */
-            padding: 15px 0;
-            font-size: 1rem;
-            text-align: center;
             margin-top: auto;
+            padding: 16px;
+            text-align: center;
+            color: var(--muted);
+            border-top: 1px solid var(--border);
+            font-size: .95rem;
         }
+        footer .heart { color: #f87171; }
 
-        footer span {
-            color: red;
-            font-size: 1.2rem;
-        }
-
-        /* Dark/Light Mode Toggle Button */
-        .theme-toggle {
+        .confetti {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--game-border-color);
-            color: var(--button-text-color); /* Use button text color variable */
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            z-index: 10; /* Ensure it's above other elements */
+            top: -20px;
+            font-size: 1.4rem;
+            pointer-events: none;
+            z-index: 9999;
+            animation: confettiFall linear forwards;
         }
-
-        .theme-toggle:hover {
-            background: var(--game-hover-bg-color);
-            color: var(--game-hover-text-color);
+        @keyframes confettiFall {
+            to { transform: translateY(110vh) rotate(720deg); opacity: .2; }
         }
-
-        /* Unique Loading Screen */
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--background-color);
-            display: none; /* Hidden by default */
-            justify-content: center;
-            align-items: center;
-            z-index: 9999; /* Ensure it's on top */
-            flex-direction: column;
-        }
-
-        .loading-circle {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: conic-gradient(#ff7eb3, #ff758c, #ff7eb3);
-            animation: spinAndPulse 1.5s infinite ease-in-out;
-            box-shadow: 0 0 20px rgba(255, 126, 179, 0.5);
-        }
-
-        .loading-text {
-            font-size: 1.5rem;
-            color: var(--text-color);
-            margin-top: 20px; /* Increased spacing between circle and text */
-            font-family: 'Arial', sans-serif;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            animation: pulseText 1.5s infinite;
-        }
-
-        @keyframes spinAndPulse {
-            0% {
-                transform: rotate(0deg) scale(1);
-            }
-            50% {
-                transform: rotate(180deg) scale(1.2);
-            }
-            100% {
-                transform: rotate(360deg) scale(1);
-            }
-        }
-
-        @keyframes pulseText {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.7;
-            }
-        }
-
-        /* Random Game Button */
-        .random-game-button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 1.2rem;
-            background: var(--game-border-color);
-            color: var(--button-text-color); /* Use button text color variable */
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        .random-game-button:hover {
-            background: var(--game-hover-bg-color);
-            color: var(--game-hover-text-color);
-        }
-
-        /* Search Bar */
-        .search-bar {
-            margin: 20px auto;
-            width: 80%;
-            max-width: 400px;
-            padding: 10px;
-            font-size: 1rem;
-            border: 2px solid var(--game-border-color);
-            border-radius: 5px;
-            background: var(--game-bg-color);
-            color: var(--text-color);
-            transition: border-color 0.3s ease;
-        }
-
-        .search-bar:focus {
-            outline: none;
-            border-color: var(--game-hover-bg-color);
-        }
-
-        /* Easter Egg Animation */
-        .easter-egg-animation {
+        .egg-msg {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 2rem;
-            color: #ff7eb3;
-            animation: bounce 1s infinite ease-in-out;
+            font-size: clamp(1.2rem, 4vw, 2rem);
+            font-weight: 800;
+            background: var(--panel);
+            border: 1px solid var(--accent);
+            border-radius: 16px;
+            padding: 18px 28px;
+            box-shadow: var(--shadow);
+            z-index: 9999;
             pointer-events: none;
+            animation: eggPop .4s ease;
         }
-
-        @keyframes bounce {
-            0%, 100% {
-                transform: translate(-50%, -50%) scale(1);
-            }
-            50% {
-                transform: translate(-50%, -50%) scale(1.2);
-            }
-        }
+        @keyframes eggPop { from { transform: translate(-50%, -50%) scale(.6); opacity: 0; } }
     </style>
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <!-- Dark/Light Mode Toggle Button -->
-    <button id="theme-toggle" class="theme-toggle">Switch to Light Mode</button>
+    <header class="topbar">
+        <div class="brand" title="Mini-Game Hub"><span class="logo">🕹️</span><span>Mini-Game Hub</span></div>
+        <button id="theme-toggle" class="icon-btn" title="Toggle theme">☀️</button>
+    </header>
 
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="loading-screen">
-        <div class="loading-circle"></div>
-        <div class="loading-text">Loading...</div>
-    </div>
-
-    <div>
-        <!-- Easter Egg Title -->
+    <section class="hero">
         <h1 id="game-title">Mini-Game Hub</h1>
-        <p>Select a game to play:</p>
+        <p class="tagline">15 seconds to fun — pick a game. Press <b>/</b> to search.</p>
+    </section>
 
-        <!-- Search Bar -->
-        <input type="text" id="search-bar" class="search-bar" placeholder="Search for a game...">
-
-        <div class="game-list" id="game-list">
-            <!-- Existing Games -->
-            <div class="game" data-game="hangman">
-                <i class="fas fa-hat-wizard"></i>Hangman
-            </div>
-            <div class="game" data-game="tic-tac-toe">
-                <i class="fas fa-chess-board"></i>Tic-Tac-Toe
-            </div>
-            <div class="game" data-game="memory-match">
-                <i class="fas fa-brain"></i>Memory Match
-            </div>
-            <div class="game" data-game="snake">
-                <i class="fas fa-dragon"></i>Snake
-            </div>
-            <div class="game" data-game="trivia">
-                <i class="fas fa-question-circle"></i>Trivia Quiz
-            </div>
-            <div class="game" data-game="breakout">
-                <i class="fas fa-gamepad"></i>Breakout
-            </div>
-            <div class="game" data-game="2048">
-                <i class="fas fa-puzzle-piece"></i>2048 Puzzle
-            </div>
-            <div class="game" data-game="flappy-bird">
-                <i class="fas fa-crow"></i>Flappy Bird
-            </div>
-            <div class="game" data-game="minesweeper">
-                <i class="fas fa-bomb"></i>Minesweeper
-            </div>
-            <div class="game" data-game="rock-paper-scissors">
-                <i class="fas fa-hand-rock"></i>Rock-Paper-Scissors
-            </div>
-            <!-- New Games -->
-            <div class="game" data-game="space-invaders">
-                <i class="fas fa-space-shuttle"></i>Space Invaders
-            </div>
-            <div class="game" data-game="sudoku">
-                <i class="fas fa-table"></i>Sudoku
-            </div>
-            <div class="game" data-game="frogger">
-                <i class="fas fa-frog"></i>Frogger
-            </div>
-            <div class="game" data-game="whack-a-mole">
-                <i class="fas fa-hammer"></i>Whack-a-Mole
-            </div>
-        </div>
-
-        <!-- Random Game Button -->
-        <button id="random-game-button" class="random-game-button">Play Random Game</button>
+    <div class="controls">
+        <input type="text" id="search-bar" class="search-bar" placeholder="Search for a game…" autocomplete="off">
     </div>
-    <footer>
-        Made with <span>&hearts;</span> in India by Sukhi
-    </footer>
+    <div class="chips" id="chips"></div>
+
+    <main class="game-list" id="game-list"></main>
+    <p class="no-results" id="no-results">No games match your search 🤔</p>
+
+    <div class="actions">
+        <button id="random-game-button" class="btn">🎲 Play a Random Game</button>
+    </div>
+
+    <footer>Made with <span class="heart">&hearts;</span> in India by Sukhi</footer>
 
     <script>
-        // Function to show the loading screen
-        function showLoadingScreen() {
-            const loadingScreen = document.getElementById('loading-screen');
-            loadingScreen.style.display = 'flex';
-        }
+        const GAMES = [
+            { file: 'snake', name: 'Snake', icon: '🐍', tag: 'arcade', desc: 'Eat, grow, survive', best: { key: 'mg-best-snake', label: 'Best' } },
+            { file: '2048', name: '2048', icon: '🧩', tag: 'puzzle', desc: 'Merge to 2048', best: { key: 'mg-best-2048', label: 'Best' } },
+            { file: 'tic-tac-toe', name: 'Tic-Tac-Toe', icon: '⭕', tag: 'classic', desc: 'Beat the AI' },
+            { file: 'memory-match', name: 'Memory Match', icon: '🧠', tag: 'puzzle', desc: 'Find all pairs', best: { key: 'mg-best-memory', label: 'Best', suffix: ' moves' } },
+            { file: 'hangman', name: 'Hangman', icon: '🔤', tag: 'classic', desc: 'Guess the word', best: { key: 'mg-best-hangman', label: 'Streak' } },
+            { file: 'trivia', name: 'Trivia Quiz', icon: '💡', tag: 'puzzle', desc: '10 random questions', best: { key: 'mg-best-trivia', label: 'Best' } },
+            { file: 'breakout', name: 'Breakout', icon: '🧱', tag: 'arcade', desc: 'Smash the bricks', best: { key: 'mg-best-breakout', label: 'Best' } },
+            { file: 'flappy-bird', name: 'Flappy Bird', icon: '🐦', tag: 'arcade', desc: 'Tap to fly', best: { key: 'mg-best-flappy', label: 'Best' } },
+            { file: 'minesweeper', name: 'Minesweeper', icon: '💣', tag: 'puzzle', desc: 'Clear the field', best: { key: 'mg-best-mines-easy', label: 'Best', time: true } },
+            { file: 'rock-paper-scissors', name: 'Rock-Paper-Scissors', icon: '✊', tag: 'classic', desc: 'First to 5 wins', best: { key: 'mg-wins-rps', label: 'Match wins' } },
+            { file: 'space-invaders', name: 'Space Invaders', icon: '👾', tag: 'arcade', desc: 'Defend the Earth', best: { key: 'mg-best-invaders', label: 'Best' } },
+            { file: 'sudoku', name: 'Sudoku', icon: '🔢', tag: 'puzzle', desc: 'Logic classic', best: { key: 'mg-best-sudoku-easy', label: 'Best', time: true } },
+            { file: 'frogger', name: 'Frogger', icon: '🐸', tag: 'arcade', desc: 'Hop home safely', best: { key: 'mg-best-frogger', label: 'Best' } },
+            { file: 'whack-a-mole', name: 'Whack-a-Mole', icon: '🔨', tag: 'arcade', desc: '30s of bonking', best: { key: 'mg-best-whack', label: 'Best' } },
+            { file: 'pong', name: 'Pong', icon: '🏓', tag: 'classic', desc: 'vs AI or a friend', best: { key: 'mg-wins-pong', label: 'Match wins' } },
+            { file: 'typing-test', name: 'Typing Speed Test', icon: '⌨️', tag: 'skill', desc: 'How fast can you type?', best: { key: 'mg-best-typing', label: 'Best', suffix: ' WPM' } },
+            { file: 'doodle-jump', name: 'Doodle Jump', icon: '🟢', tag: 'arcade', desc: 'Bounce ever higher', best: { key: 'mg-best-doodle', label: 'Best' } },
+            { file: 'air-hockey', name: 'Air Hockey', icon: '🏒', tag: 'arcade', desc: 'First to 7 goals', best: { key: 'mg-wins-hockey', label: 'Match wins' } },
+            { file: 'connect-four', name: 'Connect Four', icon: '🔴', tag: 'classic', desc: 'Four in a row wins', best: { key: 'mg-wins-connect4', label: 'AI beaten' } },
+            { file: 'simon-says', name: 'Simon Says', icon: '🎵', tag: 'skill', desc: 'Repeat the pattern', best: { key: 'mg-best-simon', label: 'Best', suffix: ' rounds' } },
+            { file: 'wordle', name: 'Wordle', icon: '🟩', tag: 'puzzle', desc: 'Guess the word in 6', best: { key: 'mg-best-wordle', label: 'Streak' } },
+            { file: 'tetris', name: 'Tetris', icon: '🟪', tag: 'arcade', desc: 'The classic stacker', best: { key: 'mg-best-tetris', label: 'Best' } },
+        ];
+        const TAGS = ['all', 'arcade', 'puzzle', 'classic', 'skill'];
+        let activeTag = 'all';
 
-        // Function to hide the loading screen
-        function hideLoadingScreen() {
-            const loadingScreen = document.getElementById('loading-screen');
-            loadingScreen.style.display = 'none';
-        }
-
-        // Add event listeners to all game buttons
-        document.querySelectorAll('.game').forEach(game => {
-            game.addEventListener('click', () => {
-                const gameName = game.dataset.game;
-
-                // Show the loading screen
-                showLoadingScreen();
-
-                // Simulate a delay for loading the game (you can replace this with actual game loading logic)
-                setTimeout(() => {
-                    // Hide the loading screen after the delay
-                    hideLoadingScreen();
-
-                    // Redirect to the game page
-                    window.location.href = `${gameName}.html`;
-                }, 1500); // Simulated 1.5-second loading time
-            });
-        });
-
-        // Dark/Light Mode Toggle Logic
-        const themeToggle = document.getElementById('theme-toggle');
-        const body = document.body;
-
-        // Check if user has a saved theme preference
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'light') {
-            body.classList.add('light-mode');
-            themeToggle.textContent = 'Switch to Dark Mode';
-        } else {
-            body.classList.remove('light-mode');
-            themeToggle.textContent = 'Switch to Light Mode';
-        }
-
-        // Toggle between dark and light mode
-        themeToggle.addEventListener('click', () => {
-            body.classList.toggle('light-mode');
-
-            if (body.classList.contains('light-mode')) {
-                themeToggle.textContent = 'Switch to Dark Mode';
-                localStorage.setItem('theme', 'light'); // Save preference
-            } else {
-                themeToggle.textContent = 'Switch to Light Mode';
-                localStorage.setItem('theme', 'dark'); // Save preference
-            }
-        });
-
-        // Random Game Button Logic
-        const randomGameButton = document.getElementById('random-game-button');
-        const games = document.querySelectorAll('.game');
-
-        randomGameButton.addEventListener('click', () => {
-            const randomIndex = Math.floor(Math.random() * games.length); // Generate random index
-            const randomGame = games[randomIndex];
-            const gameName = randomGame.dataset.game;
-
-            // Show the loading screen
-            showLoadingScreen();
-
-            // Simulate a delay for loading the game (you can replace this with actual game loading logic)
-            setTimeout(() => {
-                // Hide the loading screen after the delay
-                hideLoadingScreen();
-
-                // Redirect to the randomly selected game page
-                window.location.href = `${gameName}.html`;
-            }, 1500); // Simulated 1.5-second loading time
-        });
-
-        // Search Bar Logic
+        const listEl = document.getElementById('game-list');
+        const chipsEl = document.getElementById('chips');
         const searchBar = document.getElementById('search-bar');
-        const gameList = document.querySelectorAll('.game');
+        const noResults = document.getElementById('no-results');
 
-        searchBar.addEventListener('input', () => {
-            const query = searchBar.value.toLowerCase(); // Get the search query in lowercase
-
-            gameList.forEach(game => {
-                const gameName = game.textContent.toLowerCase(); // Get the game name in lowercase
-                if (gameName.includes(query)) {
-                    game.style.display = 'flex'; // Show the game if it matches the query
-                } else {
-                    game.style.display = 'none'; // Hide the game if it doesn't match
-                }
-            });
-        });
-
-        // Randomize Game Layout
-        const gameContainer = document.getElementById('game-list');
-        const gameElements = Array.from(gameContainer.children);
-
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
+        function fmtTime(s) {
+            s = +s;
+            return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
         }
 
-        shuffleArray(gameElements);
-        gameElements.forEach(game => gameContainer.appendChild(game));
+        function bestText(g) {
+            if (!g.best) return '';
+            const v = localStorage.getItem(g.best.key);
+            if (v === null || v === '' || +v === 0) return '';
+            return `🏆 ${g.best.label}: ${g.best.time ? fmtTime(v) : v}${g.best.suffix || ''}`;
+        }
 
-        // Easter Egg Logic
+        function renderChips() {
+            chipsEl.innerHTML = '';
+            TAGS.forEach(tag => {
+                const b = document.createElement('button');
+                b.className = 'chip' + (tag === activeTag ? ' active' : '');
+                b.textContent = tag === 'all' ? `All (${GAMES.length})` : tag[0].toUpperCase() + tag.slice(1);
+                b.onclick = () => { activeTag = tag; renderChips(); renderGames(); };
+                chipsEl.appendChild(b);
+            });
+        }
+
+        function renderGames() {
+            const q = searchBar.value.trim().toLowerCase();
+            listEl.innerHTML = '';
+            let shown = 0;
+            GAMES.forEach((g, i) => {
+                if (activeTag !== 'all' && g.tag !== activeTag) return;
+                if (q && !(g.name.toLowerCase().includes(q) || g.tag.includes(q) || g.desc.toLowerCase().includes(q))) return;
+                const a = document.createElement('a');
+                a.className = 'game';
+                a.href = g.file + '.html';
+                a.style.animationDelay = (shown * 30) + 'ms';
+                a.innerHTML = `
+                    <span class="tag">${g.tag}</span>
+                    <span class="icon">${g.icon}</span>
+                    <span>${g.name}</span>
+                    <span class="desc">${g.desc}</span>
+                    <span class="best">${bestText(g)}</span>`;
+                listEl.appendChild(a);
+                shown++;
+            });
+            noResults.style.display = shown ? 'none' : 'block';
+        }
+
+        searchBar.addEventListener('input', renderGames);
+        document.addEventListener('keydown', e => {
+            if (e.key === '/' && document.activeElement !== searchBar) {
+                e.preventDefault();
+                searchBar.focus();
+            }
+        });
+
+        document.getElementById('random-game-button').addEventListener('click', () => {
+            const g = GAMES[Math.floor(Math.random() * GAMES.length)];
+            window.location.href = g.file + '.html';
+        });
+
+        // Theme toggle (shared 'theme' key across all pages)
+        const themeToggle = document.getElementById('theme-toggle');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeToggle.textContent = light ? '🌙' : '☀️';
+        }
+        themeToggle.addEventListener('click', () => {
+            localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light');
+            applyTheme();
+        });
+        applyTheme();
+
+        // Easter egg: click the title 5 times for confetti
         const gameTitle = document.getElementById('game-title');
-        let clickCount = 0;
-        let easterEggTimeout;
-
+        let clickCount = 0, eggTimeout;
         gameTitle.addEventListener('click', () => {
             clickCount++;
-            clearTimeout(easterEggTimeout);
-
+            clearTimeout(eggTimeout);
             if (clickCount === 5) {
-                const easterEgg = document.createElement('div');
-                easterEgg.classList.add('easter-egg-animation');
-                easterEgg.innerText = '🎉 You found an Easter Egg! 🎉';
-                document.body.appendChild(easterEgg);
-
-                setTimeout(() => {
-                    easterEgg.remove();
-                }, 3000);
+                clickCount = 0;
+                const msg = document.createElement('div');
+                msg.className = 'egg-msg';
+                msg.textContent = '🎉 You found the Easter Egg! 🎉';
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 2500);
+                const pieces = ['🎉', '⭐', '🎊', '💜', '🎮', '✨'];
+                for (let i = 0; i < 40; i++) {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.textContent = pieces[Math.floor(Math.random() * pieces.length)];
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+                    c.style.animationDelay = (Math.random() * 0.5) + 's';
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 4000);
+                }
             }
-
-            easterEggTimeout = setTimeout(() => {
-                clickCount = 0; // Reset click count after 2 seconds
-            }, 2000);
+            eggTimeout = setTimeout(() => { clickCount = 0; }, 2000);
         });
+
+        renderChips();
+        renderGames();
     </script>
 </body>
 </html>
