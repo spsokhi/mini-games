@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nonogram — Mini-Game Hub</title>
+    <style>
+        :root {
+            --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --border: #2a2f3f;
+            --text: #e8eaf2; --muted: #9aa1b5; --accent: #8b5cf6; --accent-2: #22d3ee;
+            --good: #34d399; --gold: #fbbf24; --shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        body.light-mode {
+            --bg: #eef1f7; --panel: #ffffff; --panel-2: #f3f5fa; --border: #d8dce8;
+            --text: #232735; --muted: #5b6274; --shadow: 0 10px 30px rgba(35,39,53,.12);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(900px 450px at 80% -10%, rgba(139,92,246,.12), transparent 60%), var(--bg);
+            color: var(--text); transition: background-color .3s, color .3s;
+        }
+        .topbar {
+            width: 100%; max-width: 600px; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px; padding: 14px 16px;
+        }
+        .back { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; }
+        .back:hover { color: var(--text); background: var(--panel); }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .icon-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            width: 40px; height: 40px; border-radius: 10px; font-size: 1.05rem; cursor: pointer;
+        }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        .modes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 4px 16px 10px; }
+        .mode-btn {
+            padding: 9px 16px; border-radius: 999px; border: 1px solid var(--border);
+            background: var(--panel); color: var(--muted); font-weight: 600; cursor: pointer;
+            transition: all .15s ease;
+        }
+        .mode-btn:hover { border-color: var(--accent); color: var(--text); }
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff; border-color: transparent;
+        }
+
+        .hud { display: flex; gap: 10px; padding-bottom: 12px; flex-wrap: wrap; justify-content: center; }
+        .stat {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+            padding: 7px 18px; text-align: center; min-width: 86px;
+        }
+        .stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+        .stat .value { font-size: 1.25rem; font-weight: 800; }
+        #best-el .value { color: var(--gold); }
+
+        .tools { display: flex; gap: 8px; padding-bottom: 12px; }
+        .tool {
+            padding: 9px 22px; border-radius: 10px; border: 1px solid var(--border);
+            background: var(--panel); color: var(--muted); font-weight: 700; cursor: pointer;
+            transition: all .15s ease;
+        }
+        .tool.active { color: var(--text); border-color: var(--accent); background: var(--panel-2); box-shadow: 0 0 0 2px rgba(139,92,246,.25); }
+
+        .stage { position: relative; }
+        .board {
+            display: grid; gap: 2px;
+            background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+            padding: 12px; width: min(94vw, 520px); box-shadow: var(--shadow);
+            touch-action: none; user-select: none; -webkit-user-select: none;
+        }
+        .clue {
+            display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+            color: var(--muted); font-weight: 700; font-size: clamp(.58rem, 2.4vw, .8rem);
+            padding: 2px 5px 2px 2px; line-height: 1.15;
+        }
+        .clue.col { flex-direction: column; justify-content: flex-end; align-items: center; padding: 2px; }
+        .clue.done { color: var(--good); opacity: .55; text-decoration: line-through; }
+        .cell {
+            aspect-ratio: 1; border-radius: 4px; cursor: pointer;
+            background: var(--panel-2); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: clamp(.6rem, 2.6vw, .9rem); font-weight: 700; color: var(--muted);
+            transition: background .08s ease; -webkit-tap-highlight-color: transparent;
+        }
+        .cell:hover { border-color: var(--accent); }
+        .cell.fill { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; }
+        .cell.b-right { margin-right: 4px; }
+        .cell.b-bottom, .clue.b-bottom { margin-bottom: 4px; }
+        .clue.b-right { margin-right: 4px; }
+        .board.won .cell { cursor: default; }
+        .board.won .cell.fill { animation: glowIn .8s ease; }
+        @keyframes glowIn { from { filter: brightness(2); } }
+
+        .overlay {
+            position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px;
+            align-items: center; justify-content: center; text-align: center; padding: 20px;
+            background: rgba(10,12,18,.82); border-radius: 16px; backdrop-filter: blur(3px); z-index: 5;
+        }
+        body.light-mode .overlay { background: rgba(240,243,249,.9); }
+        .overlay.hidden { display: none; }
+        .overlay .big { font-size: 1.9rem; font-weight: 800; margin: 0; }
+        .overlay .sub { color: var(--muted); margin: 0; line-height: 1.8; }
+        .overlay .new-best { color: var(--gold); font-weight: 800; }
+        .btn {
+            padding: 12px 26px; font-size: 1rem; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(139,92,246,.35); transition: transform .15s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+
+        .toolbar { display: flex; gap: 8px; padding: 16px; }
+        .tool-btn {
+            padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border);
+            background: var(--panel); color: var(--text); font-weight: 600; cursor: pointer;
+        }
+        .tool-btn:hover { border-color: var(--accent); }
+        .hint { color: var(--muted); font-size: .88rem; padding: 0 16px 20px; text-align: center; max-width: 480px; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="back" href="index.html">← Hub</a>
+        <h1>🖼️ Nonogram</h1>
+        <button id="theme-btn" class="icon-btn" title="Toggle theme">☀️</button>
+    </header>
+
+    <div class="modes">
+        <button class="mode-btn active" data-size="5">😊 5×5</button>
+        <button class="mode-btn" data-size="8">🤔 8×8</button>
+        <button class="mode-btn" data-size="10">🔥 10×10</button>
+    </div>
+
+    <div class="hud">
+        <div class="stat"><div class="label">Time</div><div class="value" id="time">0:00</div></div>
+        <div class="stat" id="best-el"><div class="label">Best</div><div class="value" id="best">—</div></div>
+    </div>
+
+    <div class="tools">
+        <button class="tool active" id="tool-fill">🖌️ Fill</button>
+        <button class="tool" id="tool-mark">✕ Mark</button>
+    </div>
+
+    <div class="stage">
+        <div class="board" id="board"></div>
+        <div class="overlay hidden" id="overlay">
+            <p class="big" id="ov-title"></p>
+            <p class="sub" id="ov-sub"></p>
+            <button class="btn" id="ov-btn">New Puzzle</button>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <button class="tool-btn" id="clear-btn">🧹 Clear Board</button>
+        <button class="tool-btn" id="new-btn">🔄 New Puzzle</button>
+    </div>
+
+    <p class="hint">The numbers give the runs of filled cells in each row and column, in order, with at least one gap between runs. Fill cells to satisfy every clue — use <b>✕ Mark</b> (or right-click) to note cells you've ruled out.</p>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeBtn.textContent = light ? '🌙' : '☀️';
+        }
+        themeBtn.onclick = () => { localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+        applyTheme();
+
+        function bestKey(n) { return n === 5 ? 'mg-best-nonogram' : 'mg-best-nonogram-' + n; }
+        function fmtTime(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+
+        let N = 5, target, grid, rowClues, colClues, won = false;
+        let secs = 0, timer = null;
+        let tool = 'fill';
+        const boardEl = document.getElementById('board');
+        const overlay = document.getElementById('overlay');
+        let cellEls = [], rowClueEls = [], colClueEls = [];
+
+        function cluesOf(line) {
+            const runs = [];
+            let run = 0;
+            for (const v of line) {
+                if (v) run++;
+                else if (run) { runs.push(run); run = 0; }
+            }
+            if (run) runs.push(run);
+            return runs.length ? runs : [0];
+        }
+        const row = (g, r) => g[r];
+        const col = (g, c) => g.map(rw => rw[c]);
+
+        function generate() {
+            do {
+                target = Array.from({ length: N }, () =>
+                    Array.from({ length: N }, () => Math.random() < 0.55 ? 1 : 0));
+            } while (target.flat().filter(Boolean).length < N * N * 0.4);
+            rowClues = target.map(r => cluesOf(r));
+            colClues = target[0].map((_, c) => cluesOf(col(target, c)));
+        }
+
+        function showBest() {
+            const b = localStorage.getItem(bestKey(N));
+            document.getElementById('best').textContent = b ? fmtTime(+b) : '—';
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            secs = 0;
+            document.getElementById('time').textContent = '0:00';
+            timer = setInterval(() => {
+                secs++;
+                document.getElementById('time').textContent = fmtTime(secs);
+            }, 1000);
+        }
+
+        function newPuzzle() {
+            generate();
+            grid = Array.from({ length: N }, () => new Array(N).fill(0)); // 0 empty, 1 fill, 2 mark
+            won = false;
+            overlay.classList.add('hidden');
+            boardEl.classList.remove('won');
+            startTimer();
+            showBest();
+            build();
+        }
+
+        function build() {
+            boardEl.innerHTML = '';
+            boardEl.style.gridTemplateColumns = `minmax(34px, auto) repeat(${N}, 1fr)`;
+            cellEls = []; rowClueEls = []; colClueEls = [];
+
+            boardEl.appendChild(document.createElement('div')); // corner
+            for (let c = 0; c < N; c++) {
+                const d = document.createElement('div');
+                d.className = 'clue col' + ((c + 1) % 5 === 0 && c < N - 1 ? ' b-right' : '');
+                d.innerHTML = colClues[c].map(n => `<span>${n}</span>`).join('');
+                boardEl.appendChild(d);
+                colClueEls.push(d);
+            }
+            for (let r = 0; r < N; r++) {
+                const rc = document.createElement('div');
+                rc.className = 'clue' + ((r + 1) % 5 === 0 && r < N - 1 ? ' b-bottom' : '');
+                rc.innerHTML = rowClues[r].map(n => `<span>${n}</span>`).join(' ');
+                boardEl.appendChild(rc);
+                rowClueEls.push(rc);
+                for (let c = 0; c < N; c++) {
+                    const d = document.createElement('div');
+                    d.className = 'cell'
+                        + ((c + 1) % 5 === 0 && c < N - 1 ? ' b-right' : '')
+                        + ((r + 1) % 5 === 0 && r < N - 1 ? ' b-bottom' : '');
+                    d.dataset.r = r; d.dataset.c = c;
+                    boardEl.appendChild(d);
+                    cellEls.push(d);
+                }
+            }
+            refresh();
+        }
+
+        function refresh() {
+            cellEls.forEach(el => {
+                const v = grid[el.dataset.r][el.dataset.c];
+                el.classList.toggle('fill', v === 1);
+                el.textContent = v === 2 ? '✕' : '';
+            });
+            for (let r = 0; r < N; r++) {
+                rowClueEls[r].classList.toggle('done',
+                    cluesOf(row(grid, r).map(v => v === 1)).join() === rowClues[r].join());
+            }
+            for (let c = 0; c < N; c++) {
+                colClueEls[c].classList.toggle('done',
+                    cluesOf(col(grid, c).map(v => v === 1)).join() === colClues[c].join());
+            }
+        }
+
+        function checkWin() {
+            for (let r = 0; r < N; r++)
+                if (cluesOf(row(grid, r).map(v => v === 1)).join() !== rowClues[r].join()) return;
+            for (let c = 0; c < N; c++)
+                if (cluesOf(col(grid, c).map(v => v === 1)).join() !== colClues[c].join()) return;
+            win();
+        }
+
+        function win() {
+            won = true;
+            clearInterval(timer);
+            boardEl.classList.add('won');
+            grid.forEach(rw => rw.forEach((v, i) => { if (v === 2) rw[i] = 0; })); // sweep the ✕s off the finished picture
+            refresh();
+            const key = bestKey(N);
+            const prev = +localStorage.getItem(key) || Infinity;
+            const isBest = secs < prev;
+            if (isBest) localStorage.setItem(key, secs);
+            document.getElementById('ov-title').textContent = '🖼️ Picture Perfect!';
+            document.getElementById('ov-sub').innerHTML =
+                `Solved the ${N}×${N} in <b>${fmtTime(secs)}</b><br>` +
+                (isBest ? '<span class="new-best">🏆 New best time!</span>' : `Best: ${fmtTime(Math.min(prev, secs))}`);
+            showBest();
+            setTimeout(() => overlay.classList.remove('hidden'), 900);
+        }
+
+        // painting: click sets, drag paints only cells that matched the first cell's state
+        let painting = null; // { from, to }
+        function applyPaint(el) {
+            if (!el || !el.classList.contains('cell')) return;
+            const r = +el.dataset.r, c = +el.dataset.c;
+            if (grid[r][c] !== painting.from) return;
+            grid[r][c] = painting.to;
+            refresh();
+            checkWin();
+        }
+        boardEl.addEventListener('pointerdown', e => {
+            if (won) return;
+            const el = e.target.closest('.cell');
+            if (!el) return;
+            e.preventDefault();
+            const useMark = tool === 'mark' || e.button === 2;
+            const cur = grid[el.dataset.r][el.dataset.c];
+            const to = useMark ? (cur === 2 ? 0 : 2) : (cur === 1 ? 0 : 1);
+            painting = { from: cur, to };
+            applyPaint(el);
+        });
+        boardEl.addEventListener('pointermove', e => {
+            if (!painting || won) return;
+            e.preventDefault();
+            applyPaint(document.elementFromPoint(e.clientX, e.clientY));
+        });
+        window.addEventListener('pointerup', () => { painting = null; });
+        boardEl.addEventListener('contextmenu', e => e.preventDefault());
+
+        const toolFill = document.getElementById('tool-fill');
+        const toolMark = document.getElementById('tool-mark');
+        function setTool(t) {
+            tool = t;
+            toolFill.classList.toggle('active', t === 'fill');
+            toolMark.classList.toggle('active', t === 'mark');
+        }
+        toolFill.onclick = () => setTool('fill');
+        toolMark.onclick = () => setTool('mark');
+
+        document.getElementById('new-btn').onclick = newPuzzle;
+        document.getElementById('ov-btn').onclick = newPuzzle;
+        document.getElementById('clear-btn').onclick = () => {
+            if (won) return;
+            grid = Array.from({ length: N }, () => new Array(N).fill(0));
+            refresh();
+        };
+        document.querySelectorAll('.mode-btn').forEach(b => {
+            b.onclick = () => {
+                document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
+                N = +b.dataset.size;
+                newPuzzle();
+            };
+        });
+
+        newPuzzle();
+    </script>
+</body>
+</html>

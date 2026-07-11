@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aim Trainer — Mini-Game Hub</title>
+    <style>
+        :root {
+            --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --border: #2a2f3f;
+            --text: #e8eaf2; --muted: #9aa1b5; --accent: #8b5cf6; --accent-2: #22d3ee;
+            --good: #34d399; --bad: #f87171; --gold: #fbbf24; --shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        body.light-mode {
+            --bg: #eef1f7; --panel: #ffffff; --panel-2: #f3f5fa; --border: #d8dce8;
+            --text: #232735; --muted: #5b6274; --shadow: 0 10px 30px rgba(35,39,53,.12);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(900px 450px at 80% -10%, rgba(248,113,113,.10), transparent 60%), var(--bg);
+            color: var(--text); transition: background-color .3s, color .3s;
+        }
+        .topbar {
+            width: 100%; max-width: 700px; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px; padding: 14px 16px;
+        }
+        .back { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; }
+        .back:hover { color: var(--text); background: var(--panel); }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .top-actions { display: flex; gap: 8px; }
+        .icon-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            width: 40px; height: 40px; border-radius: 10px; font-size: 1.05rem; cursor: pointer;
+        }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        .hud { display: flex; gap: 10px; padding: 4px 16px 12px; flex-wrap: wrap; justify-content: center; }
+        .stat {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+            padding: 7px 18px; text-align: center; min-width: 86px;
+        }
+        .stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+        .stat .value { font-size: 1.25rem; font-weight: 800; }
+        #best-el .value { color: var(--gold); }
+        #combo-el .value { color: var(--accent-2); }
+
+        .stage { position: relative; width: min(94vw, 660px); }
+        .arena {
+            position: relative; height: min(58vh, 440px); overflow: hidden;
+            background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+            box-shadow: var(--shadow); cursor: crosshair; touch-action: none;
+            user-select: none; -webkit-user-select: none;
+        }
+        .target {
+            position: absolute; border-radius: 50%; transform: translate(-50%, -50%) scale(0);
+            background:
+                radial-gradient(circle, #fff 0 18%, var(--bad) 18% 42%, #fff 42% 62%, var(--bad) 62% 100%);
+            box-shadow: 0 4px 14px rgba(0,0,0,.35);
+            cursor: crosshair; -webkit-tap-highlight-color: transparent;
+        }
+        .pop {
+            position: absolute; transform: translate(-50%, -50%); font-weight: 800; font-size: 1rem;
+            pointer-events: none; animation: popUp .6s ease forwards; white-space: nowrap;
+        }
+        .pop.good { color: var(--good); }
+        .pop.bad { color: var(--bad); }
+        @keyframes popUp { to { transform: translate(-50%, -140%); opacity: 0; } }
+
+        .overlay {
+            position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px;
+            align-items: center; justify-content: center; text-align: center; padding: 20px;
+            background: rgba(10,12,18,.75); border-radius: 16px; backdrop-filter: blur(3px); z-index: 5;
+        }
+        body.light-mode .overlay { background: rgba(240,243,249,.88); }
+        .overlay.hidden { display: none; }
+        .overlay .big { font-size: 2rem; font-weight: 800; margin: 0; }
+        .overlay .sub { color: var(--muted); margin: 0; line-height: 1.9; }
+        .overlay .new-best { color: var(--gold); font-weight: 800; }
+        .btn {
+            padding: 12px 26px; font-size: 1rem; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(139,92,246,.35); transition: transform .15s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .hint { color: var(--muted); font-size: .88rem; padding: 12px 16px; text-align: center; max-width: 560px; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="back" href="index.html">← Hub</a>
+        <h1>🎯 Aim Trainer</h1>
+        <div class="top-actions">
+            <button id="sound-btn" class="icon-btn" title="Toggle sound">🔊</button>
+            <button id="theme-btn" class="icon-btn" title="Toggle theme">☀️</button>
+        </div>
+    </header>
+
+    <div class="hud">
+        <div class="stat"><div class="label">Score</div><div class="value" id="score">0</div></div>
+        <div class="stat"><div class="label">Time</div><div class="value" id="time">30</div></div>
+        <div class="stat" id="combo-el"><div class="label">Combo</div><div class="value" id="combo">×1.0</div></div>
+        <div class="stat" id="best-el"><div class="label">Best</div><div class="value" id="best">0</div></div>
+    </div>
+
+    <div class="stage">
+        <div class="arena" id="arena"></div>
+        <div class="overlay" id="overlay">
+            <p class="big" id="ov-title">🎯 Aim Trainer</p>
+            <p class="sub" id="ov-sub">30 seconds. Hit targets fast, don't spray —<br>misses cost points and your combo.</p>
+            <button class="btn" id="ov-btn">Start</button>
+        </div>
+    </div>
+
+    <p class="hint">Faster hits score more. Every hit builds your combo multiplier (up to <b>×2</b>) — a stray click or an expired target resets it.</p>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeBtn.textContent = light ? '🌙' : '☀️';
+        }
+        themeBtn.onclick = () => { localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+        applyTheme();
+
+        let muted = localStorage.getItem('mg-muted') === '1', actx;
+        const soundBtn = document.getElementById('sound-btn');
+        soundBtn.textContent = muted ? '🔇' : '🔊';
+        soundBtn.onclick = () => { muted = !muted; localStorage.setItem('mg-muted', muted ? '1' : '0'); soundBtn.textContent = muted ? '🔇' : '🔊'; };
+        function beep(freq, dur = 0.08, type = 'square', vol = 0.04, slide = 0) {
+            if (muted) return;
+            actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+            const o = actx.createOscillator(), g = actx.createGain();
+            o.type = type; o.frequency.value = freq;
+            if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), actx.currentTime + dur);
+            g.gain.setValueAtTime(vol, actx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+            o.connect(g); g.connect(actx.destination);
+            o.start(); o.stop(actx.currentTime + dur);
+        }
+
+        const BEST_KEY = 'mg-best-aim';
+        const ROUND = 30;           // seconds
+        const LIFE = 2000;          // target lifetime ms
+        const GROW = 350;           // grow-in ms
+
+        const arena = document.getElementById('arena');
+        const overlay = document.getElementById('overlay');
+        const ovTitle = document.getElementById('ov-title');
+        const ovSub = document.getElementById('ov-sub');
+        const ovBtn = document.getElementById('ov-btn');
+
+        let playing = false, timeLeft, score, combo, maxCombo, hits, clicks, targets, nextSpawn, raf;
+        let best = +localStorage.getItem(BEST_KEY) || 0;
+        document.getElementById('best').textContent = best;
+
+        const mult = () => 1 + Math.min(combo, 20) * 0.05;
+
+        function updateHud() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('time').textContent = Math.ceil(timeLeft);
+            document.getElementById('combo').textContent = '×' + mult().toFixed(2).replace(/0$/, '');
+        }
+
+        function floatText(x, y, text, cls) {
+            const p = document.createElement('div');
+            p.className = 'pop ' + cls;
+            p.textContent = text;
+            p.style.left = x + 'px'; p.style.top = y + 'px';
+            arena.appendChild(p);
+            setTimeout(() => p.remove(), 650);
+        }
+
+        function spawnTarget() {
+            const r = 24 + Math.random() * 18;
+            const rect = arena.getBoundingClientRect();
+            const x = r + 8 + Math.random() * (rect.width - 2 * (r + 8));
+            const y = r + 8 + Math.random() * (rect.height - 2 * (r + 8));
+            const el = document.createElement('div');
+            el.className = 'target';
+            el.style.width = el.style.height = r * 2 + 'px';
+            el.style.left = x + 'px'; el.style.top = y + 'px';
+            const t = { el, x, y, born: performance.now(), dead: false };
+            el.addEventListener('pointerdown', e => {
+                e.stopPropagation();
+                if (!playing || t.dead) return;
+                t.dead = true;
+                clicks++; hits++;
+                const lifeLeft = Math.max(0, 1 - (performance.now() - t.born) / LIFE);
+                const pts = Math.round((100 + 60 * lifeLeft) * mult());
+                score += pts;
+                combo++; maxCombo = Math.max(maxCombo, combo);
+                beep(500 + Math.min(combo, 20) * 30, .06, 'triangle', .05);
+                floatText(t.x, t.y - 10, '+' + pts, 'good');
+                el.remove();
+                targets = targets.filter(o => o !== t);
+                updateHud();
+            });
+            arena.appendChild(el);
+            targets.push(t);
+        }
+
+        function missClick() {
+            if (!playing) return;
+            clicks++;
+            score = Math.max(0, score - 50);
+            if (combo > 0) beep(150, .12, 'sawtooth', .05, -60);
+            combo = 0;
+            updateHud();
+        }
+        arena.addEventListener('pointerdown', e => {
+            const rect = arena.getBoundingClientRect();
+            if (playing) floatText(e.clientX - rect.left, e.clientY - rect.top, '−50', 'bad');
+            missClick();
+        });
+
+        function start() {
+            playing = true;
+            timeLeft = ROUND; score = 0; combo = 0; maxCombo = 0; hits = 0; clicks = 0;
+            targets = []; nextSpawn = 0;
+            arena.querySelectorAll('.target,.pop').forEach(el => el.remove());
+            overlay.classList.add('hidden');
+            updateHud();
+            let last = performance.now();
+            cancelAnimationFrame(raf);
+            const tick = now => {
+                const dt = Math.min(now - last, 100);
+                last = now;
+                timeLeft -= dt / 1000;
+                if (timeLeft <= 0) return finish();
+
+                // spawn cadence speeds up over the round; up to 3 alive
+                nextSpawn -= dt;
+                const interval = 780 - 330 * (1 - timeLeft / ROUND);
+                if (nextSpawn <= 0 && targets.length < 3) {
+                    spawnTarget();
+                    nextSpawn = interval;
+                }
+
+                // animate lifecycles + expiries
+                for (const t of [...targets]) {
+                    const age = now - t.born;
+                    if (age >= LIFE) {
+                        t.dead = true;
+                        t.el.remove();
+                        targets = targets.filter(o => o !== t);
+                        if (combo > 0) { combo = 0; updateHud(); beep(200, .1, 'sine', .03, -60); }
+                        continue;
+                    }
+                    const scale = age < GROW ? age / GROW : 1 - Math.max(0, (age - GROW) / (LIFE - GROW)) * 0.75;
+                    t.el.style.transform = `translate(-50%,-50%) scale(${scale.toFixed(3)})`;
+                }
+
+                updateHud();
+                raf = requestAnimationFrame(tick);
+            };
+            raf = requestAnimationFrame(tick);
+        }
+
+        function finish() {
+            playing = false;
+            cancelAnimationFrame(raf);
+            targets.forEach(t => t.el.remove());
+            targets = [];
+            timeLeft = 0;
+            updateHud();
+            beep(660, .1, 'triangle', .05); setTimeout(() => beep(880, .16, 'triangle', .05), 120);
+            let isBest = false;
+            if (score > best) { best = score; localStorage.setItem(BEST_KEY, best); isBest = true; }
+            document.getElementById('best').textContent = best;
+            const acc = clicks ? Math.round(hits / clicks * 100) : 0;
+            ovTitle.textContent = '⏱️ Time!';
+            ovSub.innerHTML =
+                `Score: <b>${score}</b>` + (isBest ? ' · <span class="new-best">🏆 New best!</span>' : ` · Best: ${best}`) +
+                `<br>${hits} hits · ${acc}% accuracy · best combo ×${(1 + Math.min(maxCombo, 20) * 0.05).toFixed(2)}`;
+            ovBtn.textContent = 'Play Again';
+            overlay.classList.remove('hidden');
+        }
+
+        ovBtn.onclick = start;
+    </script>
+</body>
+</html>

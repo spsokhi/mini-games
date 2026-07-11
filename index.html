@@ -375,6 +375,11 @@
             { file: 'solitaire', name: 'Solitaire', icon: '🃏', tag: 'classic', desc: 'Klondike, draw 1 or 3', best: { key: 'mg-wins-solitaire', label: 'Wins' } },
             { file: 'asteroids', name: 'Asteroids', icon: '☄️', tag: 'arcade', desc: 'Blast & drift', best: { key: 'mg-best-asteroids', label: 'Best' } },
             { file: 'lights-out', name: 'Lights Out', icon: '💡', tag: 'puzzle', desc: 'Switch them all off', best: { key: 'mg-best-lightsout', label: 'Best', suffix: ' moves' } },
+            { file: 'dino-runner', name: 'Dino Runner', icon: '🦖', tag: 'arcade', desc: 'Jump, duck, survive', best: { key: 'mg-best-dino', label: 'Best' } },
+            { file: 'bubble-shooter', name: 'Bubble Shooter', icon: '🫧', tag: 'arcade', desc: 'Pop matching trios', best: { key: 'mg-best-bubbles', label: 'Best' } },
+            { file: 'nonogram', name: 'Nonogram', icon: '🖼️', tag: 'puzzle', desc: 'Picture logic puzzle', best: { key: 'mg-best-nonogram', label: 'Best', time: true } },
+            { file: 'checkers', name: 'Checkers', icon: '⚫', tag: 'classic', desc: 'Kings & captures vs AI', best: { key: 'mg-wins-checkers', label: 'AI beaten' } },
+            { file: 'aim-trainer', name: 'Aim Trainer', icon: '🎯', tag: 'skill', desc: '30s precision blitz', best: { key: 'mg-best-aim', label: 'Best' } },
         ];
         const TAGS = ['all', 'arcade', 'puzzle', 'classic', 'skill'];
         let activeTag = 'all';
@@ -519,6 +524,11 @@
             { icon: '🃏', name: 'Patience Pays', desc: 'Win a game of Solitaire', check: () => gte('mg-wins-solitaire', 1) },
             { icon: '☄️', name: 'Rock Crusher', desc: 'Score 2,500+ in Asteroids', check: () => gte('mg-best-asteroids', 2500) },
             { icon: '💡', name: 'Bright Spark', desc: 'Beat Lights Out (medium) in 10 moves or fewer', check: () => lteNZ('mg-best-lightsout', 10) },
+            { icon: '🦖', name: 'Prehistoric Pro', desc: 'Score 1,000+ in Dino Runner', check: () => gte('mg-best-dino', 1000) },
+            { icon: '🫧', name: 'Pop Star', desc: 'Score 2,000+ in Bubble Shooter', check: () => gte('mg-best-bubbles', 2000) },
+            { icon: '🖼️', name: 'Pixel Perfect', desc: 'Solve any Nonogram', check: () => hasAny('mg-best-nonogram', 'mg-best-nonogram-8', 'mg-best-nonogram-10') },
+            { icon: '👑', name: 'King Me', desc: 'Beat the Checkers AI', check: () => gte('mg-wins-checkers', 1) },
+            { icon: '🎯', name: 'Sharpshooter', desc: 'Score 5,000+ in Aim Trainer', check: () => gte('mg-best-aim', 5000) },
         ];
         // meta-achievement counts the others
         ACHIEVEMENTS.push({

@@ -1,6 +1,6 @@
 // Mini-Game Hub service worker — precaches every game for full offline play.
 // Bump the version whenever any file changes so clients pick up the update.
-const CACHE = 'mini-game-hub-v1';
+const CACHE = 'mini-game-hub-v2';
 
 const ASSETS = [
     './',
@@ -8,11 +8,15 @@ const ASSETS = [
     './manifest.json',
     './icon.svg',
     './2048.html',
+    './aim-trainer.html',
     './air-hockey.html',
     './asteroids.html',
     './battleship.html',
     './breakout.html',
+    './bubble-shooter.html',
+    './checkers.html',
     './connect-four.html',
+    './dino-runner.html',
     './doodle-jump.html',
     './flappy-bird.html',
     './frogger.html',
@@ -20,6 +24,7 @@ const ASSETS = [
     './lights-out.html',
     './memory-match.html',
     './minesweeper.html',
+    './nonogram.html',
     './pacman.html',
     './pong.html',
     './reaction-time.html',
