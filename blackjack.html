@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack — Mini-Game Hub</title>
+    <style>
+        :root {
+            --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --border: #2a2f3f;
+            --text: #e8eaf2; --muted: #9aa1b5; --accent: #8b5cf6; --accent-2: #22d3ee;
+            --good: #34d399; --bad: #f87171; --gold: #fbbf24; --shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        body.light-mode {
+            --bg: #eef1f7; --panel: #ffffff; --panel-2: #f3f5fa; --border: #d8dce8;
+            --text: #232735; --muted: #5b6274; --shadow: 0 10px 30px rgba(35,39,53,.12);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(900px 450px at 80% -10%, rgba(52,211,153,.12), transparent 60%), var(--bg);
+            color: var(--text); transition: background-color .3s, color .3s;
+        }
+        .topbar {
+            width: 100%; max-width: 560px; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px; padding: 14px 16px;
+        }
+        .back { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; }
+        .back:hover { color: var(--text); background: var(--panel); }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .top-actions { display: flex; gap: 8px; }
+        .icon-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            width: 40px; height: 40px; border-radius: 10px; font-size: 1.05rem; cursor: pointer;
+        }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        .hud { display: flex; gap: 10px; padding: 4px 16px 12px; flex-wrap: wrap; justify-content: center; }
+        .stat {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+            padding: 7px 18px; text-align: center; min-width: 86px;
+        }
+        .stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+        .stat .value { font-size: 1.25rem; font-weight: 800; }
+        #best-el .value { color: var(--gold); }
+        #bet-el .value { color: var(--accent-2); }
+
+        .table {
+            position: relative; width: min(94vw, 520px);
+            background: var(--panel); border: 1px solid var(--border); border-radius: 20px;
+            box-shadow: var(--shadow); padding: 18px 16px 16px;
+            display: flex; flex-direction: column; gap: 8px; min-height: 380px;
+        }
+        .row-label { color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .total-badge {
+            background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+            border-radius: 999px; padding: 2px 10px; font-size: .8rem; font-weight: 800;
+        }
+        .total-badge.bust { color: var(--bad); border-color: rgba(248,113,113,.5); }
+        .total-badge.bj { color: var(--gold); border-color: rgba(251,191,36,.5); }
+        .hand { display: flex; min-height: 92px; padding: 4px 0 8px 14px; }
+        .card {
+            width: 62px; height: 88px; border-radius: 9px; margin-left: -14px; flex-shrink: 0;
+            background: #fdfdfd; border: 1px solid #c9cdd8; color: #1e293b;
+            box-shadow: 0 3px 8px rgba(0,0,0,.3);
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 5px 7px; font-weight: 800; position: relative;
+            animation: dealIn .3s ease backwards;
+        }
+        @keyframes dealIn { from { transform: translateY(-26px) scale(.7); opacity: 0; } }
+        .card .rank { font-size: 1rem; line-height: 1; }
+        .card .suit-big { font-size: 1.7rem; text-align: center; line-height: 1; }
+        .card .rank.bottom { transform: rotate(180deg); }
+        .card.red { color: #dc2626; }
+        .card.back {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border-color: transparent;
+        }
+        .card.back::after {
+            content: '🕹️'; position: absolute; inset: 0; display: flex;
+            align-items: center; justify-content: center; font-size: 1.5rem; opacity: .85;
+        }
+        .msg { text-align: center; font-weight: 800; font-size: 1.15rem; min-height: 1.6em; }
+        .msg.good { color: var(--good); }
+        .msg.bad { color: var(--bad); }
+        .msg.gold { color: var(--gold); }
+
+        .controls { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: auto; }
+        .chip-btn {
+            width: 54px; height: 54px; border-radius: 50%; border: 3px dashed rgba(255,255,255,.55);
+            color: #fff; font-weight: 800; font-size: .95rem; cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0,0,0,.35), inset 0 0 0 4px rgba(0,0,0,.15);
+            transition: transform .12s ease;
+        }
+        .chip-btn:hover:not(:disabled) { transform: translateY(-3px) scale(1.05); }
+        .chip-btn:disabled { opacity: .35; cursor: default; }
+        .chip-10 { background: radial-gradient(circle, #38bdf8, #0369a1); }
+        .chip-25 { background: radial-gradient(circle, #4ade80, #15803d); }
+        .chip-50 { background: radial-gradient(circle, #f87171, #b91c1c); }
+        .chip-100 { background: radial-gradient(circle, #1e293b, #0f172a); border-color: rgba(251,191,36,.7); }
+        .act-btn {
+            padding: 12px 22px; font-size: 1rem; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(139,92,246,.35); transition: transform .15s;
+        }
+        .act-btn:hover:not(:disabled) { transform: translateY(-2px); }
+        .act-btn:disabled { opacity: .35; cursor: default; box-shadow: none; }
+        .act-btn.alt { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); box-shadow: none; }
+
+        .overlay {
+            position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px;
+            align-items: center; justify-content: center; text-align: center; padding: 20px;
+            background: rgba(10,12,18,.85); border-radius: 20px; backdrop-filter: blur(3px); z-index: 5;
+        }
+        body.light-mode .overlay { background: rgba(240,243,249,.92); }
+        .overlay.hidden { display: none; }
+        .overlay .big { font-size: 1.8rem; font-weight: 800; margin: 0; }
+        .overlay .sub { color: var(--muted); margin: 0; line-height: 1.8; }
+        .hint { color: var(--muted); font-size: .88rem; padding: 12px 16px 20px; text-align: center; max-width: 480px; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="back" href="index.html">← Hub</a>
+        <h1>♠️ Blackjack</h1>
+        <div class="top-actions">
+            <button id="sound-btn" class="icon-btn" title="Toggle sound">🔊</button>
+            <button id="theme-btn" class="icon-btn" title="Toggle theme">☀️</button>
+        </div>
+    </header>
+
+    <div class="hud">
+        <div class="stat"><div class="label">Chips</div><div class="value" id="chips">200</div></div>
+        <div class="stat" id="bet-el"><div class="label">Bet</div><div class="value" id="bet">0</div></div>
+        <div class="stat" id="best-el"><div class="label">Best</div><div class="value" id="best">200</div></div>
+    </div>
+
+    <div class="table">
+        <div class="row-label">Dealer <span class="total-badge" id="dealer-total">—</span></div>
+        <div class="hand" id="dealer-hand"></div>
+        <div class="msg" id="msg">Place your bet</div>
+        <div class="row-label">You <span class="total-badge" id="player-total">—</span></div>
+        <div class="hand" id="player-hand"></div>
+
+        <div class="controls" id="bet-controls">
+            <button class="chip-btn chip-10" data-v="10">10</button>
+            <button class="chip-btn chip-25" data-v="25">25</button>
+            <button class="chip-btn chip-50" data-v="50">50</button>
+            <button class="chip-btn chip-100" data-v="100">100</button>
+            <button class="act-btn alt" id="clear-btn">Clear</button>
+            <button class="act-btn" id="deal-btn" disabled>Deal</button>
+        </div>
+        <div class="controls" id="play-controls" style="display:none">
+            <button class="act-btn" id="hit-btn">Hit</button>
+            <button class="act-btn" id="stand-btn">Stand</button>
+            <button class="act-btn alt" id="double-btn">Double</button>
+        </div>
+
+        <div class="overlay hidden" id="overlay">
+            <p class="big">💸 Bankrupt!</p>
+            <p class="sub">The house always wins… eventually.<br>Here's a fresh 200 chips.</p>
+            <button class="act-btn" id="loan-btn">Take Chips</button>
+        </div>
+    </div>
+
+    <p class="hint">Get closer to 21 than the dealer without going over. Blackjack pays 3:2 · dealer stands on 17 · <b>Double</b> doubles your bet for exactly one more card.</p>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeBtn.textContent = light ? '🌙' : '☀️';
+        }
+        themeBtn.onclick = () => { localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+        applyTheme();
+
+        let muted = localStorage.getItem('mg-muted') === '1', actx;
+        const soundBtn = document.getElementById('sound-btn');
+        soundBtn.textContent = muted ? '🔇' : '🔊';
+        soundBtn.onclick = () => { muted = !muted; localStorage.setItem('mg-muted', muted ? '1' : '0'); soundBtn.textContent = muted ? '🔇' : '🔊'; };
+        function beep(freq, dur = 0.08, type = 'square', vol = 0.04, slide = 0) {
+            if (muted) return;
+            actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+            const o = actx.createOscillator(), g = actx.createGain();
+            o.type = type; o.frequency.value = freq;
+            if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), actx.currentTime + dur);
+            g.gain.setValueAtTime(vol, actx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+            o.connect(g); g.connect(actx.destination);
+            o.start(); o.stop(actx.currentTime + dur);
+        }
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        const CHIPS_KEY = 'mg-chips-blackjack', BEST_KEY = 'mg-best-blackjack';
+        const SUITS = ['♠', '♥', '♦', '♣'];
+        const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+        let chips = +localStorage.getItem(CHIPS_KEY) || 200;
+        let best = Math.max(+localStorage.getItem(BEST_KEY) || 0, chips, 200);
+        let deck, player, dealer, bet = 0, phase = 'bet'; // bet | player | dealer | settle
+
+        const el = id => document.getElementById(id);
+
+        function newDeck() {
+            deck = [];
+            for (const s of SUITS) for (const r of RANKS) deck.push({ r, s });
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function cardValue(c) {
+            if (c.r === 'A') return 11;
+            if ('JQK'.includes(c.r)) return 10;
+            return +c.r;
+        }
+        function handTotal(hand) {
+            let total = hand.reduce((s, c) => s + cardValue(c), 0);
+            let aces = hand.filter(c => c.r === 'A').length;
+            while (total > 21 && aces > 0) { total -= 10; aces--; }
+            return total;
+        }
+        const isBJ = h => h.length === 2 && handTotal(h) === 21;
+
+        function cardDiv(c, hidden) {
+            const d = document.createElement('div');
+            if (hidden) { d.className = 'card back'; return d; }
+            d.className = 'card' + ('♥♦'.includes(c.s) ? ' red' : '');
+            d.innerHTML = `<div class="rank">${c.r}${c.s}</div><div class="suit-big">${c.s}</div><div class="rank bottom">${c.r}${c.s}</div>`;
+            return d;
+        }
+
+        function renderHands(hideHole) {
+            const dh = el('dealer-hand'), ph = el('player-hand');
+            dh.innerHTML = ''; ph.innerHTML = '';
+            dealer.forEach((c, i) => dh.appendChild(cardDiv(c, hideHole && i === 1)));
+            player.forEach(c => ph.appendChild(cardDiv(c)));
+            const pt = handTotal(player);
+            const ptb = el('player-total');
+            ptb.textContent = player.length ? pt : '—';
+            ptb.className = 'total-badge' + (pt > 21 ? ' bust' : isBJ(player) ? ' bj' : '');
+            const dtb = el('dealer-total');
+            if (!dealer.length) dtb.textContent = '—';
+            else if (hideHole) dtb.textContent = cardValue(dealer[0]);
+            else dtb.textContent = handTotal(dealer);
+            dtb.className = 'total-badge' + (!hideHole && handTotal(dealer) > 21 ? ' bust' : !hideHole && isBJ(dealer) ? ' bj' : '');
+        }
+
+        function updateHud() {
+            el('chips').textContent = chips;
+            el('bet').textContent = bet;
+            el('best').textContent = best;
+            localStorage.setItem(CHIPS_KEY, chips);
+        }
+
+        function setMsg(text, cls) {
+            const m = el('msg');
+            m.textContent = text;
+            m.className = 'msg' + (cls ? ' ' + cls : '');
+        }
+
+        function setPhase(p) {
+            phase = p;
+            el('bet-controls').style.display = p === 'bet' ? 'flex' : 'none';
+            el('play-controls').style.display = p === 'player' ? 'flex' : 'none';
+            el('deal-btn').disabled = bet === 0;
+            el('double-btn').disabled = !(player && player.length === 2 && chips >= bet);
+            document.querySelectorAll('.chip-btn').forEach(b => { b.disabled = chips < +b.dataset.v; });
+        }
+
+        document.querySelectorAll('.chip-btn').forEach(b => {
+            b.onclick = () => {
+                const v = +b.dataset.v;
+                if (phase !== 'bet' || chips < v) return;
+                chips -= v; bet += v;
+                beep(500, .05, 'triangle', .04);
+                updateHud();
+                setPhase('bet');
+            };
+        });
+        el('clear-btn').onclick = () => {
+            if (phase !== 'bet') return;
+            chips += bet; bet = 0;
+            updateHud();
+            setPhase('bet');
+        };
+
+        el('deal-btn').onclick = async () => {
+            if (phase !== 'bet' || bet === 0) return;
+            newDeck();
+            player = []; dealer = [];
+            setMsg('');
+            setPhase('dealing');
+            for (const [hand, hide] of [[player, false], [dealer, false], [player, false], [dealer, true]]) {
+                hand.push(deck.pop());
+                renderHands(true);
+                beep(300, .04, 'square', .03);
+                await sleep(240);
+            }
+            if (isBJ(player) || isBJ(dealer)) return resolveNaturals();
+            setPhase('player');
+            setMsg('Hit or stand?');
+        };
+
+        async function resolveNaturals() {
+            renderHands(false);
+            await sleep(400);
+            if (isBJ(player) && isBJ(dealer)) settle('push', 'Both blackjack — push!');
+            else if (isBJ(player)) settle('bj', 'Blackjack! Paid 3:2 🎉');
+            else settle('lose', 'Dealer has blackjack 😤');
+        }
+
+        el('hit-btn').onclick = () => {
+            if (phase !== 'player') return;
+            player.push(deck.pop());
+            beep(300, .04, 'square', .03);
+            renderHands(true);
+            setPhase('player');
+            const t = handTotal(player);
+            if (t > 21) settle('lose', `Bust with ${t} 💥`);
+            else if (t === 21) dealerTurn();
+        };
+        el('stand-btn').onclick = () => { if (phase === 'player') dealerTurn(); };
+        el('double-btn').onclick = () => {
+            if (phase !== 'player' || player.length !== 2 || chips < bet) return;
+            chips -= bet; bet *= 2;
+            updateHud();
+            player.push(deck.pop());
+            beep(300, .04, 'square', .03);
+            renderHands(true);
+            const t = handTotal(player);
+            if (t > 21) settle('lose', `Doubled and bust with ${t} 💥`);
+            else dealerTurn();
+        };
+
+        async function dealerTurn() {
+            setPhase('dealer');
+            setMsg('Dealer plays…');
+            renderHands(false);
+            beep(260, .06, 'square', .03);
+            await sleep(600);
+            while (handTotal(dealer) < 17) {
+                dealer.push(deck.pop());
+                renderHands(false);
+                beep(300, .04, 'square', .03);
+                await sleep(550);
+            }
+            const dt = handTotal(dealer), pt = handTotal(player);
+            if (dt > 21) settle('win', `Dealer busts with ${dt} 🎉`);
+            else if (dt > pt) settle('lose', `Dealer wins ${dt} vs ${pt}`);
+            else if (dt < pt) settle('win', `You win ${pt} vs ${dt} 🎉`);
+            else settle('push', `Push at ${pt}`);
+        }
+
+        function settle(result, text) {
+            renderHands(false);
+            if (result === 'win') { chips += bet * 2; beep(660, .1, 'triangle', .06); setTimeout(() => beep(880, .15, 'triangle', .06), 110); }
+            else if (result === 'bj') { chips += bet + Math.floor(bet * 1.5); beep(660, .1, 'triangle', .06); setTimeout(() => beep(990, .18, 'triangle', .06), 110); }
+            else if (result === 'push') { chips += bet; beep(440, .1, 'sine', .04); }
+            else beep(200, .3, 'sawtooth', .05, -80);
+            bet = 0;
+            if (chips > best) { best = chips; localStorage.setItem(BEST_KEY, best); }
+            updateHud();
+            setMsg(text, result === 'lose' ? 'bad' : result === 'push' ? '' : result === 'bj' ? 'gold' : 'good');
+            setPhase('bet');
+            if (chips < 10) el('overlay').classList.remove('hidden');
+        }
+
+        el('loan-btn').onclick = () => {
+            chips = 200;
+            updateHud();
+            setPhase('bet');
+            el('overlay').classList.add('hidden');
+            setMsg('Fresh stack — place your bet');
+        };
+
+        player = []; dealer = [];
+        if (chips > best) best = chips;
+        updateHud();
+        renderHands(true);
+        setPhase('bet');
+        if (chips < 10) el('overlay').classList.remove('hidden');
+    </script>
+</body>
+</html>

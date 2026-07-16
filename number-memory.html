@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Memory — Mini-Game Hub</title>
+    <style>
+        :root {
+            --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --border: #2a2f3f;
+            --text: #e8eaf2; --muted: #9aa1b5; --accent: #8b5cf6; --accent-2: #22d3ee;
+            --good: #34d399; --bad: #f87171; --gold: #fbbf24; --shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        body.light-mode {
+            --bg: #eef1f7; --panel: #ffffff; --panel-2: #f3f5fa; --border: #d8dce8;
+            --text: #232735; --muted: #5b6274; --shadow: 0 10px 30px rgba(35,39,53,.12);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(900px 450px at 80% -10%, rgba(34,211,238,.12), transparent 60%), var(--bg);
+            color: var(--text); transition: background-color .3s, color .3s;
+        }
+        .topbar {
+            width: 100%; max-width: 560px; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px; padding: 14px 16px;
+        }
+        .back { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; }
+        .back:hover { color: var(--text); background: var(--panel); }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .icon-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            width: 40px; height: 40px; border-radius: 10px; font-size: 1.05rem; cursor: pointer;
+        }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        .hud { display: flex; gap: 10px; padding: 4px 16px 12px; flex-wrap: wrap; justify-content: center; }
+        .stat {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+            padding: 7px 18px; text-align: center; min-width: 86px;
+        }
+        .stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+        .stat .value { font-size: 1.25rem; font-weight: 800; }
+        #best-el .value { color: var(--gold); }
+
+        .stage {
+            position: relative; width: min(94vw, 520px); min-height: 320px;
+            background: var(--panel); border: 1px solid var(--border); border-radius: 20px;
+            box-shadow: var(--shadow); padding: 28px 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+            text-align: center;
+        }
+        .digits {
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: clamp(2rem, 9vw, 3.4rem); font-weight: 800; letter-spacing: .12em;
+            word-break: break-all; line-height: 1.3;
+        }
+        .bar-track { width: min(80%, 300px); height: 8px; border-radius: 999px; background: var(--panel-2); overflow: hidden; }
+        .bar { height: 100%; width: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+        .bar.run { transition: width linear; width: 0; }
+
+        .num-input {
+            width: min(90%, 340px); padding: 14px 16px; text-align: center;
+            font-family: Consolas, 'Courier New', monospace; font-size: 1.5rem; font-weight: 700; letter-spacing: .12em;
+            background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; color: var(--text);
+            outline: none;
+        }
+        .num-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,92,246,.2); }
+
+        .btn {
+            padding: 12px 26px; font-size: 1rem; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(139,92,246,.35); transition: transform .15s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+
+        .compare { font-family: Consolas, 'Courier New', monospace; font-size: clamp(1.2rem, 6vw, 1.9rem); font-weight: 800; letter-spacing: .12em; word-break: break-all; line-height: 1.4; }
+        .compare .lbl { display: block; font-family: 'Segoe UI', sans-serif; font-size: .75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 10px 0 2px; }
+        .compare .ok { color: var(--good); }
+        .compare .no { color: var(--bad); text-decoration: line-through; }
+        .compare .miss { color: var(--bad); }
+        .result-title { font-size: 1.7rem; font-weight: 800; margin: 0; }
+        .sub { color: var(--muted); margin: 0; line-height: 1.7; }
+        .new-best { color: var(--gold); font-weight: 800; }
+        .hidden { display: none !important; }
+        .hint { color: var(--muted); font-size: .88rem; padding: 14px 16px 20px; text-align: center; max-width: 460px; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="back" href="index.html">← Hub</a>
+        <h1>🧮 Number Memory</h1>
+        <button id="theme-btn" class="icon-btn" title="Toggle theme">☀️</button>
+    </header>
+
+    <div class="hud">
+        <div class="stat"><div class="label">Digits</div><div class="value" id="digits-stat">3</div></div>
+        <div class="stat" id="best-el"><div class="label">Best</div><div class="value" id="best">—</div></div>
+    </div>
+
+    <div class="stage">
+        <div id="view-idle">
+            <p class="result-title">🧮 Number Memory</p>
+            <p class="sub">A number flashes up — memorize it, then type it back.<br>One more digit every round. How far can you go?</p>
+            <br>
+            <button class="btn" id="start-btn">Start</button>
+        </div>
+
+        <div id="view-show" class="hidden">
+            <div class="digits" id="digits"></div>
+            <div class="bar-track"><div class="bar" id="bar"></div></div>
+        </div>
+
+        <div id="view-input" class="hidden">
+            <p class="sub">What was the number?</p>
+            <input class="num-input" id="answer" inputmode="numeric" autocomplete="off" spellcheck="false">
+            <br>
+            <button class="btn" id="submit-btn">Submit</button>
+        </div>
+
+        <div id="view-result" class="hidden">
+            <p class="result-title" id="res-title"></p>
+            <div class="compare" id="compare"></div>
+            <p class="sub" id="res-sub"></p>
+            <button class="btn" id="again-btn">Try Again</button>
+        </div>
+    </div>
+
+    <p class="hint">Levels start at 3 digits. The number stays on screen a little longer as it grows — average people reach <b>7</b>, legends hit <b>12+</b>.</p>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeBtn.textContent = light ? '🌙' : '☀️';
+        }
+        themeBtn.onclick = () => { localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+        applyTheme();
+
+        const BEST_KEY = 'mg-best-numbermem';
+        const START = 3;
+        let level = START, number = '', showTimer = null;
+        const el = id => document.getElementById(id);
+
+        function showBest() {
+            const b = +localStorage.getItem(BEST_KEY) || 0;
+            el('best').textContent = b ? b + ' digits' : '—';
+        }
+
+        function view(name) {
+            ['idle', 'show', 'input', 'result'].forEach(v => el('view-' + v).classList.toggle('hidden', v !== name));
+        }
+
+        function genNumber(n) {
+            let s = String(1 + Math.floor(Math.random() * 9));
+            while (s.length < n) s += Math.floor(Math.random() * 10);
+            return s;
+        }
+
+        function round() {
+            number = genNumber(level);
+            el('digits-stat').textContent = level;
+            el('digits').textContent = number;
+            view('show');
+            const bar = el('bar');
+            bar.classList.remove('run');
+            bar.style.transitionDuration = '0s';
+            bar.offsetWidth; // restart the CSS transition from full width
+            const ms = 1300 + level * 350;
+            bar.style.transitionDuration = ms + 'ms';
+            bar.classList.add('run');
+            clearTimeout(showTimer);
+            showTimer = setTimeout(() => {
+                view('input');
+                const inp = el('answer');
+                inp.value = '';
+                inp.focus();
+            }, ms);
+        }
+
+        function submit() {
+            const guess = el('answer').value.trim().replace(/\D/g, '');
+            if (!guess) { el('answer').focus(); return; }
+            if (guess === number) {
+                const prev = +localStorage.getItem(BEST_KEY) || 0;
+                if (level > prev) localStorage.setItem(BEST_KEY, level);
+                showBest();
+                el('res-title').textContent = '✅ Level ' + (level - START + 1) + ' passed!';
+                el('compare').innerHTML = `<span class="ok">${number}</span>`;
+                el('res-sub').innerHTML = (level > prev ? '<span class="new-best">🏆 New best!</span> · ' : '') + `Next up: <b>${level + 1}</b> digits`;
+                el('again-btn').textContent = 'Next Round';
+                view('result');
+                level++;
+            } else {
+                const marked = [...guess].map((ch, i) => `<span class="${ch === number[i] ? 'ok' : 'no'}">${ch}</span>`).join('')
+                    + (guess.length < number.length ? `<span class="miss">${'·'.repeat(number.length - guess.length)}</span>` : '');
+                const reached = level - 1;
+                el('res-title').textContent = '❌ Game Over';
+                el('compare').innerHTML =
+                    `<span class="lbl">The number</span>${number}<span class="lbl">Your answer</span>${marked}`;
+                el('res-sub').innerHTML = reached >= START
+                    ? `You held <b>${reached}</b> digits in your head` + (reached >= (+localStorage.getItem(BEST_KEY) || 0) ? ' — <span class="new-best">that ties your best!</span>' : '')
+                    : 'Everyone fumbles sometimes — go again!';
+                el('again-btn').textContent = 'Try Again';
+                view('result');
+                level = START;
+            }
+        }
+
+        el('start-btn').onclick = round;
+        el('again-btn').onclick = round;
+        el('submit-btn').onclick = submit;
+        el('answer').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+
+        showBest();
+    </script>
+</body>
+</html>

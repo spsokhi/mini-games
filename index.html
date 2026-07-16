@@ -380,6 +380,11 @@
             { file: 'nonogram', name: 'Nonogram', icon: '🖼️', tag: 'puzzle', desc: 'Picture logic puzzle', best: { key: 'mg-best-nonogram', label: 'Best', time: true } },
             { file: 'checkers', name: 'Checkers', icon: '⚫', tag: 'classic', desc: 'Kings & captures vs AI', best: { key: 'mg-wins-checkers', label: 'AI beaten' } },
             { file: 'aim-trainer', name: 'Aim Trainer', icon: '🎯', tag: 'skill', desc: '30s precision blitz', best: { key: 'mg-best-aim', label: 'Best' } },
+            { file: 'fruit-slicer', name: 'Fruit Slicer', icon: '🍉', tag: 'arcade', desc: 'Swipe, slice, combo', best: { key: 'mg-best-fruit', label: 'Best' } },
+            { file: 'sokoban', name: 'Sokoban', icon: '📦', tag: 'puzzle', desc: 'Push crates home', best: { key: 'mg-best-sokoban', label: 'Solved', suffix: '/12' } },
+            { file: 'blackjack', name: 'Blackjack', icon: '♠️', tag: 'classic', desc: 'Beat the dealer to 21', best: { key: 'mg-best-blackjack', label: 'Chips' } },
+            { file: 'number-memory', name: 'Number Memory', icon: '🧮', tag: 'skill', desc: 'How many digits?', best: { key: 'mg-best-numbermem', label: 'Best', suffix: ' digits' } },
+            { file: 'fifteen-puzzle', name: '15-Puzzle', icon: '🔢', tag: 'puzzle', desc: 'Slide tiles in order', best: { key: 'mg-best-15puzzle', label: 'Best', suffix: ' moves' } },
         ];
         const TAGS = ['all', 'arcade', 'puzzle', 'classic', 'skill'];
         let activeTag = 'all';
@@ -529,6 +534,11 @@
             { icon: '🖼️', name: 'Pixel Perfect', desc: 'Solve any Nonogram', check: () => hasAny('mg-best-nonogram', 'mg-best-nonogram-8', 'mg-best-nonogram-10') },
             { icon: '👑', name: 'King Me', desc: 'Beat the Checkers AI', check: () => gte('mg-wins-checkers', 1) },
             { icon: '🎯', name: 'Sharpshooter', desc: 'Score 5,000+ in Aim Trainer', check: () => gte('mg-best-aim', 5000) },
+            { icon: '🍉', name: 'Fruit Frenzy', desc: 'Score 300+ in Fruit Slicer', check: () => gte('mg-best-fruit', 300) },
+            { icon: '📦', name: 'Warehouse Boss', desc: 'Solve 6 Sokoban levels', check: () => gte('mg-best-sokoban', 6) },
+            { icon: '♠️', name: 'High Roller', desc: 'Grow your Blackjack stack to 500 chips', check: () => gte('mg-best-blackjack', 500) },
+            { icon: '🧮', name: 'Digit Wizard', desc: 'Recall a 10-digit number in Number Memory', check: () => gte('mg-best-numbermem', 10) },
+            { icon: '🔢', name: 'Smooth Slider', desc: 'Solve the 4×4 15-Puzzle', check: () => hasAny('mg-best-15puzzle') },
         ];
         // meta-achievement counts the others
         ACHIEVEMENTS.push({
