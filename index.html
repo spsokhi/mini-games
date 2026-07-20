@@ -385,6 +385,11 @@
             { file: 'blackjack', name: 'Blackjack', icon: '♠️', tag: 'classic', desc: 'Beat the dealer to 21', best: { key: 'mg-best-blackjack', label: 'Chips' } },
             { file: 'number-memory', name: 'Number Memory', icon: '🧮', tag: 'skill', desc: 'How many digits?', best: { key: 'mg-best-numbermem', label: 'Best', suffix: ' digits' } },
             { file: 'fifteen-puzzle', name: '15-Puzzle', icon: '🔢', tag: 'puzzle', desc: 'Slide tiles in order', best: { key: 'mg-best-15puzzle', label: 'Best', suffix: ' moves' } },
+            { file: 'lane-racer', name: 'Lane Racer', icon: '🏎️', tag: 'arcade', desc: 'Dodge the traffic', best: { key: 'mg-best-racer', label: 'Best' } },
+            { file: 'road-hopper', name: 'Road Hopper', icon: '🐔', tag: 'arcade', desc: 'Hop, don\'t stop', best: { key: 'mg-best-hopper', label: 'Best' } },
+            { file: 'tower-defense', name: 'Tower Defense', icon: '🗼', tag: 'arcade', desc: 'Hold the line', best: { key: 'mg-best-towerdef', label: 'Waves' } },
+            { file: 'higher-lower', name: 'Higher or Lower', icon: '🎴', tag: 'classic', desc: 'Call the next card', best: { key: 'mg-best-higherlower', label: 'Streak' } },
+            { file: 'dots-boxes', name: 'Dots & Boxes', icon: '✏️', tag: 'classic', desc: 'Claim the boxes vs AI', best: { key: 'mg-wins-dotsboxes', label: 'AI beaten' } },
         ];
         const TAGS = ['all', 'arcade', 'puzzle', 'classic', 'skill'];
         let activeTag = 'all';
@@ -539,6 +544,11 @@
             { icon: '♠️', name: 'High Roller', desc: 'Grow your Blackjack stack to 500 chips', check: () => gte('mg-best-blackjack', 500) },
             { icon: '🧮', name: 'Digit Wizard', desc: 'Recall a 10-digit number in Number Memory', check: () => gte('mg-best-numbermem', 10) },
             { icon: '🔢', name: 'Smooth Slider', desc: 'Solve the 4×4 15-Puzzle', check: () => hasAny('mg-best-15puzzle') },
+            { icon: '🏎️', name: 'Street Legal', desc: 'Score 1,000+ in Lane Racer', check: () => gte('mg-best-racer', 1000) },
+            { icon: '🐔', name: 'Road Warrior', desc: 'Score 100+ in Road Hopper', check: () => gte('mg-best-hopper', 100) },
+            { icon: '🗼', name: 'Tower Tactician', desc: 'Survive 10 waves in Tower Defense', check: () => gte('mg-best-towerdef', 10) },
+            { icon: '🎴', name: 'Hot Streak', desc: 'Call 8 cards in a row in Higher or Lower', check: () => gte('mg-best-higherlower', 8) },
+            { icon: '✏️', name: 'Boxed In', desc: 'Beat the Dots & Boxes AI', check: () => gte('mg-wins-dotsboxes', 1) },
         ];
         // meta-achievement counts the others
         ACHIEVEMENTS.push({

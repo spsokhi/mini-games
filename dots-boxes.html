@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dots &amp; Boxes — Mini-Game Hub</title>
+    <style>
+        :root {
+            --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --border: #2a2f3f;
+            --text: #e8eaf2; --muted: #9aa1b5; --accent: #8b5cf6; --accent-2: #22d3ee;
+            --good: #34d399; --bad: #f87171; --gold: #fbbf24; --shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        body.light-mode {
+            --bg: #eef1f7; --panel: #ffffff; --panel-2: #f3f5fa; --border: #d8dce8;
+            --text: #232735; --muted: #5b6274; --shadow: 0 10px 30px rgba(35,39,53,.12);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background: radial-gradient(900px 450px at 80% -10%, rgba(139,92,246,.12), transparent 60%), var(--bg);
+            color: var(--text); transition: background-color .3s, color .3s;
+        }
+        .topbar {
+            width: 100%; max-width: 560px; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px; padding: 14px 16px;
+        }
+        .back { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; }
+        .back:hover { color: var(--text); background: var(--panel); }
+        h1 { font-size: 1.5rem; margin: 0; }
+        .icon-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            width: 40px; height: 40px; border-radius: 10px; font-size: 1.05rem; cursor: pointer;
+        }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        .modes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 4px 16px 10px; }
+        .mode-btn {
+            padding: 9px 16px; border-radius: 999px; border: 1px solid var(--border);
+            background: var(--panel); color: var(--muted); font-weight: 600; cursor: pointer;
+            transition: all .15s ease;
+        }
+        .mode-btn:hover { border-color: var(--accent); color: var(--text); }
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff; border-color: transparent;
+        }
+
+        .hud { display: flex; gap: 10px; padding-bottom: 12px; flex-wrap: wrap; justify-content: center; }
+        .stat {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+            padding: 7px 18px; text-align: center; min-width: 86px;
+        }
+        .stat .label { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+        .stat .value { font-size: 1.15rem; font-weight: 800; }
+        #you-el .value { color: var(--accent-2); }
+        #ai-el .value { color: var(--bad); }
+        #wins-el .value { color: var(--gold); }
+
+        .stage { position: relative; }
+        .board {
+            display: grid; background: var(--panel); border: 1px solid var(--border);
+            border-radius: 16px; padding: 18px; width: min(94vw, 440px); box-shadow: var(--shadow);
+            user-select: none; -webkit-user-select: none;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); }
+        .edge { position: relative; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .edge::after {
+            content: ''; position: absolute; border-radius: 4px;
+            background: var(--panel-2); transition: background .12s ease;
+        }
+        .edge.h { height: 12px; min-width: 30px; }
+        .edge.h::after { left: 1px; right: 1px; top: 3px; bottom: 3px; }
+        .edge.v { width: 12px; min-height: 30px; }
+        .edge.v::after { top: 1px; bottom: 1px; left: 3px; right: 3px; }
+        .edge:hover::after { background: var(--accent); opacity: .55; }
+        .edge.p::after { background: linear-gradient(90deg, var(--accent), var(--accent-2)); opacity: 1; }
+        .edge.a::after { background: var(--bad); opacity: 1; }
+        .edge.p, .edge.a { cursor: default; }
+        .box { display: flex; align-items: center; justify-content: center; font-weight: 800; border-radius: 8px; margin: 3px; font-size: 1.1rem; }
+        .box.p { background: rgba(139,92,246,.28); color: var(--accent-2); }
+        .box.a { background: rgba(248,113,113,.22); color: var(--bad); }
+
+        .overlay {
+            position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px;
+            align-items: center; justify-content: center; text-align: center; padding: 20px;
+            background: rgba(10,12,18,.82); border-radius: 16px; backdrop-filter: blur(3px); z-index: 5;
+        }
+        body.light-mode .overlay { background: rgba(240,243,249,.9); }
+        .overlay.hidden { display: none; }
+        .overlay .big { font-size: 1.9rem; font-weight: 800; margin: 0; }
+        .overlay .sub { color: var(--muted); margin: 0; line-height: 1.8; }
+        .overlay .new-best { color: var(--gold); font-weight: 800; }
+        .btn {
+            padding: 12px 26px; font-size: 1rem; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(139,92,246,.35); transition: transform .15s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .hint { color: var(--muted); font-size: .88rem; padding: 14px 16px 20px; text-align: center; max-width: 470px; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="back" href="index.html">← Hub</a>
+        <h1>✏️ Dots &amp; Boxes</h1>
+        <button id="theme-btn" class="icon-btn" title="Toggle theme">☀️</button>
+    </header>
+
+    <div class="modes">
+        <button class="mode-btn active" data-n="3">😊 3×3</button>
+        <button class="mode-btn" data-n="4">🤔 4×4</button>
+        <button class="mode-btn" data-n="5">🔥 5×5</button>
+    </div>
+
+    <div class="hud">
+        <div class="stat" id="you-el"><div class="label">You</div><div class="value" id="you">0</div></div>
+        <div class="stat"><div class="label">Turn</div><div class="value" id="turn">You</div></div>
+        <div class="stat" id="ai-el"><div class="label">AI</div><div class="value" id="ai">0</div></div>
+        <div class="stat" id="wins-el"><div class="label">AI Beaten</div><div class="value" id="wins">0</div></div>
+    </div>
+
+    <div class="stage">
+        <div class="board" id="board"></div>
+        <div class="overlay hidden" id="overlay">
+            <p class="big" id="ov-title"></p>
+            <p class="sub" id="ov-sub"></p>
+            <button class="btn" id="ov-btn">Play Again</button>
+        </div>
+    </div>
+
+    <p class="hint">Take turns drawing walls. Close the 4th side of a box to claim it <b>and move again</b>. The endgame trick: when you must give a chain away, give away the <b>shortest</b> one.</p>
+
+    <script>
+        const themeBtn = document.getElementById('theme-btn');
+        function applyTheme() {
+            const light = localStorage.getItem('theme') === 'light';
+            document.body.classList.toggle('light-mode', light);
+            themeBtn.textContent = light ? '🌙' : '☀️';
+        }
+        themeBtn.onclick = () => { localStorage.setItem('theme', localStorage.getItem('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+        applyTheme();
+
+        let muted = localStorage.getItem('mg-muted') === '1', actx;
+        function beep(freq, dur = 0.08, type = 'square', vol = 0.04, slide = 0) {
+            if (muted) return;
+            actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+            const o = actx.createOscillator(), g = actx.createGain();
+            o.type = type; o.frequency.value = freq;
+            if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), actx.currentTime + dur);
+            g.gain.setValueAtTime(vol, actx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+            o.connect(g); g.connect(actx.destination);
+            o.start(); o.stop(actx.currentTime + dur);
+        }
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        const WINS_KEY = 'mg-wins-dotsboxes';
+        let N = 3;
+        // edges.h[r][c]: r 0..N, c 0..N-1 · edges.v[r][c]: r 0..N-1, c 0..N · null | 'p' | 'a'
+        let edges, boxes, turn, busy, done;
+        const boardEl = document.getElementById('board');
+        const overlay = document.getElementById('overlay');
+
+        const el = id => document.getElementById(id);
+
+        function newGame() {
+            edges = {
+                h: Array.from({ length: N + 1 }, () => new Array(N).fill(null)),
+                v: Array.from({ length: N }, () => new Array(N + 1).fill(null)),
+            };
+            boxes = Array.from({ length: N }, () => new Array(N).fill(null));
+            turn = 'p'; busy = false; done = false;
+            overlay.classList.add('hidden');
+            showWins();
+            build();
+            update();
+        }
+
+        function sides(r, c, e = edges) {
+            return [e.h[r][c], e.h[r + 1][c], e.v[r][c], e.v[r][c + 1]].filter(Boolean).length;
+        }
+        function boxesOf(kind, r, c) { // boxes adjacent to edge
+            const out = [];
+            if (kind === 'h') {
+                if (r > 0) out.push([r - 1, c]);
+                if (r < N) out.push([r, c]);
+            } else {
+                if (c > 0) out.push([r, c - 1]);
+                if (c < N) out.push([r, c]);
+            }
+            return out;
+        }
+
+        function build() {
+            boardEl.innerHTML = '';
+            boardEl.style.gridTemplateColumns = `repeat(${N}, 12px 1fr) 12px`;
+            for (let gr = 0; gr <= 2 * N; gr++) {
+                for (let gc = 0; gc <= 2 * N; gc++) {
+                    let d;
+                    if (gr % 2 === 0 && gc % 2 === 0) {
+                        d = document.createElement('div');
+                        d.className = 'dot';
+                    } else if (gr % 2 === 0) {
+                        d = document.createElement('div');
+                        d.className = 'edge h';
+                        d.dataset.kind = 'h'; d.dataset.r = gr / 2; d.dataset.c = (gc - 1) / 2;
+                        d.onclick = () => playerEdge(d.dataset);
+                    } else if (gc % 2 === 0) {
+                        d = document.createElement('div');
+                        d.className = 'edge v';
+                        d.dataset.kind = 'v'; d.dataset.r = (gr - 1) / 2; d.dataset.c = gc / 2;
+                        d.onclick = () => playerEdge(d.dataset);
+                    } else {
+                        d = document.createElement('div');
+                        d.className = 'box';
+                        d.dataset.r = (gr - 1) / 2; d.dataset.c = (gc - 1) / 2;
+                    }
+                    boardEl.appendChild(d);
+                }
+            }
+        }
+
+        function update() {
+            document.querySelectorAll('.edge').forEach(d => {
+                const v = edges[d.dataset.kind][d.dataset.r][d.dataset.c];
+                d.classList.toggle('p', v === 'p');
+                d.classList.toggle('a', v === 'a');
+            });
+            let p = 0, a = 0;
+            document.querySelectorAll('.box').forEach(d => {
+                const v = boxes[d.dataset.r][d.dataset.c];
+                d.className = 'box' + (v ? ' ' + v : '');
+                d.textContent = v === 'p' ? '🟣' : v === 'a' ? '🔴' : '';
+            });
+            boxes.flat().forEach(v => { if (v === 'p') p++; if (v === 'a') a++; });
+            el('you').textContent = p;
+            el('ai').textContent = a;
+            el('turn').textContent = done ? '—' : turn === 'p' ? 'You' : 'AI…';
+        }
+
+        function take(kind, r, c, who) { // returns number of boxes closed
+            edges[kind][r][c] = who;
+            let closed = 0;
+            for (const [br, bc] of boxesOf(kind, +r, +c)) {
+                if (!boxes[br][bc] && sides(br, bc) === 4) {
+                    boxes[br][bc] = who;
+                    closed++;
+                }
+            }
+            return closed;
+        }
+
+        function allEdges(state = edges) {
+            const out = [];
+            for (let r = 0; r <= N; r++) for (let c = 0; c < N; c++) if (!state.h[r][c]) out.push(['h', r, c]);
+            for (let r = 0; r < N; r++) for (let c = 0; c <= N; c++) if (!state.v[r][c]) out.push(['v', r, c]);
+            return out;
+        }
+
+        function gameOver() {
+            return boxes.flat().every(Boolean);
+        }
+
+        async function playerEdge(ds) {
+            if (busy || done || turn !== 'p') return;
+            const { kind, r, c } = ds;
+            if (edges[kind][r][c]) return;
+            const closed = take(kind, r, c, 'p');
+            beep(closed ? 700 : 340, .06, closed ? 'triangle' : 'square', .04);
+            update();
+            if (gameOver()) return finish();
+            if (!closed) {
+                turn = 'a';
+                update();
+                await aiTurn();
+            }
+        }
+
+        function edgeCloses(kind, r, c) {
+            return boxesOf(kind, r, c).some(([br, bc]) => !boxes[br][bc] && sides(br, bc) === 3);
+        }
+        function edgeGivesAway(kind, r, c) {
+            // would this edge hand the opponent a 3-sided box?
+            edges[kind][r][c] = 'x';
+            const bad = boxesOf(kind, r, c).some(([br, bc]) => !boxes[br][bc] && sides(br, bc) === 3);
+            edges[kind][r][c] = null;
+            return bad;
+        }
+
+        function chainCost(kind, r, c) {
+            // simulate playing this edge, then the opponent greedily eating every capture
+            const snapH = edges.h.map(x => x.slice()), snapV = edges.v.map(x => x.slice());
+            const snapB = boxes.map(x => x.slice());
+            take(kind, r, c, 'x');
+            let eaten = 0, found = true;
+            while (found) {
+                found = false;
+                for (const [k2, r2, c2] of allEdges()) {
+                    if (edgeCloses(k2, r2, c2)) {
+                        eaten += take(k2, r2, c2, 'x');
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            edges.h = snapH; edges.v = snapV; boxes = snapB;
+            return eaten;
+        }
+
+        async function aiTurn() {
+            busy = true;
+            while (!done) {
+                await sleep(420);
+                // 1. take every box on offer
+                const capture = allEdges().find(([k, r, c]) => edgeCloses(k, r, c));
+                if (capture) {
+                    take(...capture, 'a');
+                    beep(260, .06, 'triangle', .04);
+                    update();
+                    if (gameOver()) { finish(); break; }
+                    continue; // completing a box grants another move
+                }
+                // 2. otherwise a safe edge, 3. otherwise the cheapest sacrifice
+                const free = allEdges();
+                const safe = free.filter(([k, r, c]) => !edgeGivesAway(k, r, c));
+                let move;
+                if (safe.length) move = safe[Math.floor(Math.random() * safe.length)];
+                else {
+                    let bestCost = Infinity;
+                    for (const e of free) {
+                        const cost = chainCost(...e);
+                        if (cost < bestCost) { bestCost = cost; move = e; }
+                    }
+                }
+                take(...move, 'a');
+                beep(300, .05, 'square', .035);
+                update();
+                if (gameOver()) { finish(); break; }
+                turn = 'p';
+                update();
+                break;
+            }
+            busy = false;
+        }
+
+        function showWins() {
+            el('wins').textContent = +localStorage.getItem(WINS_KEY) || 0;
+        }
+
+        function finish() {
+            done = true;
+            update();
+            let p = 0, a = 0;
+            boxes.flat().forEach(v => { if (v === 'p') p++; else a++; });
+            const t = el('ov-title'), s = el('ov-sub');
+            if (p > a) {
+                const wins = (+localStorage.getItem(WINS_KEY) || 0) + 1;
+                localStorage.setItem(WINS_KEY, wins);
+                showWins();
+                t.textContent = '🏆 You Win!';
+                s.innerHTML = `<b>${p}</b> boxes to <b>${a}</b><br><span class="new-best">AI beaten ${wins} time${wins > 1 ? 's' : ''}!</span>`;
+                beep(523, .12, 'triangle', .06); setTimeout(() => beep(659, .12, 'triangle', .06), 130); setTimeout(() => beep(784, .2, 'triangle', .06), 260);
+            } else if (a > p) {
+                t.textContent = '😔 AI Wins';
+                s.innerHTML = `<b>${a}</b> boxes to <b>${p}</b> — watch those third walls!`;
+                beep(220, .3, 'sawtooth', .05, -80);
+            } else {
+                t.textContent = '🤝 Dead Even';
+                s.textContent = `${p} boxes each. Rematch?`;
+            }
+            setTimeout(() => overlay.classList.remove('hidden'), 600);
+        }
+
+        el('ov-btn').onclick = newGame;
+        document.querySelectorAll('.mode-btn').forEach(b => {
+            b.onclick = () => {
+                document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
+                N = +b.dataset.n;
+                newGame();
+            };
+        });
+
+        newGame();
+    </script>
+</body>
+</html>

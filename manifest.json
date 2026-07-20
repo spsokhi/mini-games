@@ -1,7 +1,7 @@
 {
     "name": "Mini-Game Hub",
     "short_name": "Mini-Games",
-    "description": "38 mini-games in one hub — fully offline, no dependencies.",
+    "description": "43 mini-games in one hub — fully offline, no dependencies.",
     "start_url": "./index.html",
     "scope": "./",
     "display": "standalone",
